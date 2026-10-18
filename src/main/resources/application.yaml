@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: food_delivery_app
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/food_delivery
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+
+logging:
+  pattern:
+    level: "%5p [%X{correlationId:-}]"
