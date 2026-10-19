@@ -1,8 +1,10 @@
-package com.example.food_delivery_app.core.exceptions;
+package com.example.food_delivery_app.core.handler;
 
+import com.example.food_delivery_app.core.exceptions.AppException;
 import com.example.food_delivery_app.core.utils.ApiResponse;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.Nullable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -18,7 +20,6 @@ import java.util.Map;
 
 /**
  * The one and only exception handler for the whole application.
- *
  * It inherits from ResponseEntityExceptionHandler to handle Spring MVC exceptions (like 405, 415, wrong json format and missing params).
  * and it doesn't be converted to 500 wrongly, but instead it returns a proper status code and a unified error response.
  * and it also handles our custom AppException (NotFound, Business, Conflict, Unauthorized...).
@@ -38,7 +39,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     // 400: any validation error on @RequestBody (for example, when using @Valid or @Validated).
     @Override
-    protected ResponseEntity<Object> handleMethodArgumentNotValid(
+    protected @Nullable ResponseEntity<Object> handleMethodArgumentNotValid(
             MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
         Map<String, String> errors = new LinkedHashMap<>();
         ex.getBindingResult().getFieldErrors()
@@ -62,8 +63,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     // 400, 404, 405, 415, 500: any other Spring MVC exception (like 405, 415, wrong json format and missing params).
     @Override
-    protected ResponseEntity<Object> handleExceptionInternal(
-            Exception ex, Object body, HttpHeaders headers, HttpStatusCode statusCode, WebRequest request) {
+    protected @Nullable ResponseEntity<Object> handleExceptionInternal(Exception ex, @Nullable Object body, HttpHeaders headers, HttpStatusCode statusCode, WebRequest request) {
         HttpStatus status = HttpStatus.resolve(statusCode.value());
         String reason = status != null ? status.getReasonPhrase() : "Error";
         if (statusCode.is5xxServerError()) {
