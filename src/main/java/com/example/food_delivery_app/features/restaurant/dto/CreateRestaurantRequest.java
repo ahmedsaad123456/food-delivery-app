@@ -18,7 +18,7 @@ public record CreateRestaurantRequest(
         String description,
 
         @NotNull(message = "categoryId is required")
-        Long categoryId,
+        Integer categoryId,
 
         @NotBlank(message = "address is required")
         @Size(max = 255, message = "address must be at most 255 characters")

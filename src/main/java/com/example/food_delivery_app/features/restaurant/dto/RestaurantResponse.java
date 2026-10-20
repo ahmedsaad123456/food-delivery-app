@@ -2,13 +2,17 @@ package com.example.food_delivery_app.features.restaurant.dto;
 
 
 
+import lombok.Builder;
+
 import java.time.Instant;
 
+
+@Builder
 public record RestaurantResponse(
-        Long id,
+        Integer id,
         String name,
         String description,
-        Long categoryId,
+        Integer categoryId,
         String categoryName,
         String address,
         String phone,

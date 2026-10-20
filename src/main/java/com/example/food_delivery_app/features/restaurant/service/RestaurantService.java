@@ -27,7 +27,7 @@ public class RestaurantService {
 
     @Transactional
     public RestaurantResponse create(CreateRestaurantRequest req) {
-        Category category = categoryRepository.findById(Math.toIntExact(req.categoryId()))
+        Category category = categoryRepository.findById(req.categoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Category", req.categoryId()));
 
         Restaurant saved = restaurantRepository.save(mapper.toEntity(req, category));
@@ -54,7 +54,7 @@ public class RestaurantService {
         Restaurant restaurant = restaurantRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(RESTAURANT_NOT_FOUND, id));
 
-        Category category = categoryRepository.findById(Math.toIntExact(req.categoryId()))
+        Category category = categoryRepository.findById(req.categoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Category", req.categoryId()));
 
         restaurant.setName(req.name());
