@@ -17,11 +17,18 @@ spring:
     enabled: true
     baseline-on-migrate: true
 
-  server:
-    servlet:
-      context-path: /api/v1
+  jwt-secret-key: ${JWT_SECRET_KEY}
 
+  messages:
+    basename: messages
+    fallback-to-system-locale: false
 
-  logging:
-    pattern:
-      level: "%5p [%X{correlationId:-}]"
+server:
+  servlet:
+    context-path: /api/v1
+
+logging:
+  pattern:
+    level: "%5p [%X{correlationId:-}]"
+  level:
+    org.springframework.security: TRACE

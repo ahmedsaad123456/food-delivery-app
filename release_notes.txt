@@ -1,0 +1,5 @@
+### User Authentication & JWT Security
+
+- Implemented user authentication using JWT.
+- Configured Spring Security for stateless authentication.
+- Added JWT-based request authentication and authorization.

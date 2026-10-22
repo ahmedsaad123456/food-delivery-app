@@ -1,13 +1,14 @@
 package com.example.food_delivery_app.features.restaurant.service;
 
-import com.example.food_delivery_app.core.exceptions.ResourceNotFoundException;
-import com.example.food_delivery_app.features.restaurant.dto.CreateRestaurantRequest;
-import com.example.food_delivery_app.features.restaurant.dto.RestaurantMapper;
-import com.example.food_delivery_app.features.restaurant.dto.RestaurantResponse;
-import com.example.food_delivery_app.features.restaurant.entity.Category;
-import com.example.food_delivery_app.features.restaurant.entity.Restaurant;
-import com.example.food_delivery_app.features.restaurant.repository.CategoryRepository;
-import com.example.food_delivery_app.features.restaurant.repository.RestaurantRepository;
+import com.example.food_delivery_app.exceptions.ResourceNotFoundException;
+import com.example.food_delivery_app.restaurant.dto.CreateRestaurantRequest;
+import com.example.food_delivery_app.restaurant.dto.RestaurantMapper;
+import com.example.food_delivery_app.restaurant.dto.RestaurantResponse;
+import com.example.food_delivery_app.restaurant.entity.Category;
+import com.example.food_delivery_app.restaurant.entity.Restaurant;
+import com.example.food_delivery_app.restaurant.repository.CategoryRepository;
+import com.example.food_delivery_app.restaurant.repository.RestaurantRepository;
+import com.example.food_delivery_app.restaurant.service.RestaurantService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
