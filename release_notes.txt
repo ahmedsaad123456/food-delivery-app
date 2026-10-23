@@ -1,5 +1,5 @@
-### User Authentication & JWT Security
+### Authentication Improvements & Exception Handling
 
-- Implemented user authentication using JWT.
-- Configured Spring Security for stateless authentication.
-- Added JWT-based request authentication and authorization.
+- Made minor improvements to the authentication flow.
+- Added custom exception handling for authentication-related errors.
+- Improved understanding of password hashing, JWT authentication, and Spring Security.

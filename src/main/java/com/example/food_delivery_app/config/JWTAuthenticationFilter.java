@@ -1,5 +1,6 @@
 package com.example.food_delivery_app.config;
 
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -10,6 +11,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -56,19 +58,22 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
             // Here you can implement your logic to authenticate the user based on the extracted username.
             // For example, you can load the user details from the database and set the authentication in the security context.
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+        try{
+                if (jwtService.isTokenValid(jwt, userDetails)) {
 
-            if (jwtService.isTokenValid(jwt, userDetails)) {
+                    // create an authentication token using the user details and set it in the security context.
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                            userDetails, null, userDetails.getAuthorities()
+                    );
 
+                    // Set the details of the authentication token using the request information.
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities()
-                );
-
-                // Set the details of the authentication token using the request information.
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-                // If the token is valid, create an authentication token and set it in the security context.
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+                    // If the token is valid, create an authentication token and set it in the security context.
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                }
+            } catch (JwtException | IllegalArgumentException | UsernameNotFoundException e) {
+                SecurityContextHolder.clearContext();
             }
         }
 

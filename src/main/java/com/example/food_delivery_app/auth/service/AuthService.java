@@ -10,7 +10,6 @@ import com.example.food_delivery_app.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -26,7 +25,7 @@ public class AuthService {
         var user = User.builder()
                 .fullName(request.getFullName())
                 .email(request.getEmail())
-                .passwordHash(passwordEncoder.encode(request.getPassword()))
+                .passwordHash(passwordEncoder.encode(request.getPassword())) // Hash the password before storing it in the database
                 .role(Role.CUSTOMER)
                 .enabled(true)
                 .build();
@@ -38,15 +37,22 @@ public class AuthService {
                 .build();
     }
 
+    // The authenticate method is responsible for authenticating a user based on the provided email and password. It uses the AuthenticationManager to perform the authentication process.
+    // If the authentication is successful, it retrieves the user from the database and generates a JWT token for the authenticated user.
+    // if the authentication fails, it throws an exception indicating that the user was not found.
     public AuthResponse authenticate(AuthRequest request) {
-        authenticationManager.authenticate(
+        // The authenticate method is responsible for authenticating a user based on the provided email and password.
+        // It uses the AuthenticationManager to perform the authentication process.
+        // The AuthenticationManager.authenticate() method takes an instance of UsernamePasswordAuthenticationToken, which contains the user's email and password, and attempts to authenticate the user.
+        // By using AuthenticationProvider (typically DaoAuthenticationProvider), it checks the provided credentials against the stored user details (e.g., in the database) and verifies if they match.
+        var auth = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.getEmail(),
-                        request.getPassword()
-        ));
+                        request.getPassword()));
 
-        var user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        var user = (User) auth.getPrincipal();   // already loaded by userDetailsService, no second query
+
 
         var jwtToken = jwtService.generateToken(user);
         return AuthResponse.builder()
