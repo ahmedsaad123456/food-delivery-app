@@ -4,9 +4,35 @@ public class Constants {
 
     private Constants() {}
 
+    public static final String API_VERSION = "v1.0";
+
     public static final String BEARER_AUTHENTICATION = "Bearer Authentication";
+
+    public static final String BEARER_SMALL = "bearer";
+    public static final String JWT = "JWT";
+    public static final String HEADER_AUTHORIZATION = "Authorization";
     public static final String HEADER_CORRELATION_ID = "X-Correlation-Id";
 
     public static final String MDC_KEY = "correlationId";
+
+    public static final String CUSTOMER_ERROR = "CUSTOMER role is missing, check the Flyway migration";
+
+    public static final String TOKEN_KEY  = "refresh:token:";
+    public static final String USED_KEY   = "refresh:used:";
+    public static final String FAMILY_KEY = "refresh:family:";
+
+    public static final String BLACK_LIST_KEY = "jwt:blacklist:";
+
+    public static final String FOOD_DELIVERY_API = "Food Delivery API";
+
+    public static final String API_DOCUMENTATION = "API documentation";
+
+
+    public static final String RESTAURANT = "Restaurant";
+
+    public static final String CATEGORY = "category";
+
+
+
 
 }

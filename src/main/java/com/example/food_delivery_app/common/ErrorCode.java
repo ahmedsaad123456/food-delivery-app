@@ -1,4 +1,4 @@
-package com.example.food_delivery_app.exceptions;
+package com.example.food_delivery_app.common;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -14,11 +14,15 @@ public enum ErrorCode {
     RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND),
     DATA_CONFLICT(HttpStatus.CONFLICT),
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR),
-
+    SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE),
+    TOO_MANY_REQUESTS(HttpStatus.TOO_MANY_REQUESTS),
     // auth
     INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED),
     EMAIL_ALREADY_REGISTERED(HttpStatus.CONFLICT),
-    TEMP_SESSION_EXPIRED(HttpStatus.UNAUTHORIZED);
+    TEMP_SESSION_EXPIRED(HttpStatus.UNAUTHORIZED),
+
+    INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED);
+
 
     private final HttpStatus status;
 

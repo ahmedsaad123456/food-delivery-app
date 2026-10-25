@@ -3,15 +3,28 @@ package com.example.food_delivery_app.auth.service;
 import com.example.food_delivery_app.auth.dto.AuthRequest;
 import com.example.food_delivery_app.auth.dto.AuthResponse;
 import com.example.food_delivery_app.auth.dto.RegisterRequest;
+import com.example.food_delivery_app.common.Constants;
 import com.example.food_delivery_app.config.JwtService;
+import com.example.food_delivery_app.exceptions.AppException;
+import com.example.food_delivery_app.common.ErrorCode;
 import com.example.food_delivery_app.users.entity.Role;
+import com.example.food_delivery_app.users.entity.RoleEntity;
 import com.example.food_delivery_app.users.entity.User;
+import com.example.food_delivery_app.users.repository.RoleRepository;
 import com.example.food_delivery_app.users.repository.UserRepository;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.util.HashSet;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -19,22 +32,26 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final RoleRepository roleRepository;
     private final AuthenticationManager authenticationManager;
+    private final RefreshTokenService refreshTokenService;
+    private final TokenBlacklistService tokenBlacklistService;
 
+    @Transactional
     public AuthResponse register(RegisterRequest request) {
+        RoleEntity customer = roleRepository.findByName(Role.CUSTOMER)
+                .orElseThrow(() -> new IllegalStateException(Constants.CUSTOMER_ERROR));
+
         var user = User.builder()
                 .fullName(request.getFullName())
                 .email(request.getEmail())
-                .passwordHash(passwordEncoder.encode(request.getPassword())) // Hash the password before storing it in the database
-                .role(Role.CUSTOMER)
+                .passwordHash(passwordEncoder.encode(request.getPassword()))
+                .roleEntities(new HashSet<>(Set.of(customer)))     // mutable set, not Set.of(...) alone
                 .enabled(true)
                 .build();
 
         userRepository.save(user);
-        var jwtToken = jwtService.generateToken(user);
-        return AuthResponse.builder()
-                .accessToken(jwtToken)
-                .build();
+        return generateAccessTokenAndRefreshToken(user);
     }
 
     // The authenticate method is responsible for authenticating a user based on the provided email and password. It uses the AuthenticationManager to perform the authentication process.
@@ -51,15 +68,51 @@ public class AuthService {
                         request.getPassword()));
 
 
-        var user = (User) auth.getPrincipal();   // already loaded by userDetailsService, no second query
+        return generateAccessTokenAndRefreshToken((User) auth.getPrincipal()); // authenticate
+    }
 
-
-        var jwtToken = jwtService.generateToken(user);
+    // One place that creates both tokens, used by register and login
+    private AuthResponse generateAccessTokenAndRefreshToken(User user) {
         return AuthResponse.builder()
-                .accessToken(jwtToken)
+                .accessToken(jwtService.generateToken(user))
+                .refreshToken(refreshTokenService.createRefreshToken(user.getId()))   // starts a new family
                 .build();
     }
 
+    public AuthResponse getRefreshToken(String refreshToken) {
+        // 1. Validate + consume the old token (throws 401 if invalid or reused)
+        var rotated = refreshTokenService.rotate(refreshToken);
+
+        // 2. Load the user fresh from the DB (the account may have been disabled meanwhile)
+        var user = userRepository.findById(rotated.userId())
+                .filter(User::isEnabled)
+                .orElseThrow(() -> {
+                    refreshTokenService.revoke(rotated.newToken());   // don't leave a live token for a dead account
+                    return new AppException(ErrorCode.INVALID_REFRESH_TOKEN);
+                });
+
+        // 3. New access token + the new refresh token we already created in rotate()
+        return AuthResponse.builder()
+                .accessToken(jwtService.generateToken(user))
+                .refreshToken(rotated.newToken())
+                .build();
+    }
+
+    public void logout(String authHeader, String refreshToken) {
+        // 1. Kill the refresh token (and its whole family): no more renewals
+        refreshTokenService.revoke(refreshToken);
+
+        // 2. Blacklist the current access token until it would have expired anyway
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            try {
+                Claims claims = jwtService.parse(authHeader.substring(7));
+                Duration remaining = Duration.between(Instant.now(), claims.getExpiration().toInstant());
+                tokenBlacklistService.blacklist(claims.getId(), remaining);
+            } catch (JwtException | IllegalArgumentException ignored) {
+                // access token already expired or invalid: nothing to blacklist; logout still succeeds
+            }
+        }
+    }
 
 
 }

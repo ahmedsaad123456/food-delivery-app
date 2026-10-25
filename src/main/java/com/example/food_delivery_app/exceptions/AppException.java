@@ -1,5 +1,6 @@
 package com.example.food_delivery_app.exceptions;
 
+import com.example.food_delivery_app.common.ErrorCode;
 import lombok.Getter;
 
 import java.util.Arrays;

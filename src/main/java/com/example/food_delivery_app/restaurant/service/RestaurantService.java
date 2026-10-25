@@ -1,8 +1,9 @@
 package com.example.food_delivery_app.restaurant.service;
 
+import com.example.food_delivery_app.common.Constants;
 import com.example.food_delivery_app.exceptions.ResourceNotFoundException;
 import com.example.food_delivery_app.restaurant.dto.CreateRestaurantRequest;
-import com.example.food_delivery_app.restaurant.dto.RestaurantMapper;
+import com.example.food_delivery_app.restaurant.mapper.RestaurantMapper;
 import com.example.food_delivery_app.restaurant.dto.RestaurantResponse;
 import com.example.food_delivery_app.restaurant.entity.Category;
 import com.example.food_delivery_app.restaurant.entity.Restaurant;
@@ -23,12 +24,11 @@ public class RestaurantService {
     private final RestaurantMapper mapper;
 
 
-    private static final String RESTAURANT_NOT_FOUND = "Restaurant";
 
     @Transactional
-    public RestaurantResponse create(CreateRestaurantRequest req) {
+    public RestaurantResponse createRestaurant(CreateRestaurantRequest req) {
         Category category = categoryRepository.findById(req.categoryId())
-                .orElseThrow(() -> new ResourceNotFoundException("Category", req.categoryId()));
+                .orElseThrow(() -> new ResourceNotFoundException(Constants.CATEGORY, req.categoryId()));
 
         Restaurant saved = restaurantRepository.save(mapper.toEntity(req, category));
         return mapper.toResponse(saved);
@@ -36,9 +36,9 @@ public class RestaurantService {
 
     @Transactional(readOnly = true)
 
-    public RestaurantResponse getById(Integer id) {
+    public RestaurantResponse getRestaurantById(Integer id) {
         Restaurant restaurant = restaurantRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(RESTAURANT_NOT_FOUND, id));
+                .orElseThrow(() -> new ResourceNotFoundException(Constants.RESTAURANT, id));
         return mapper.toResponse(restaurant);
     }
 
@@ -52,10 +52,10 @@ public class RestaurantService {
     @Transactional
     public RestaurantResponse updateRestaurant(Integer id, CreateRestaurantRequest req) {
         Restaurant restaurant = restaurantRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(RESTAURANT_NOT_FOUND, id));
+                .orElseThrow(() -> new ResourceNotFoundException(Constants.RESTAURANT, id));
 
         Category category = categoryRepository.findById(req.categoryId())
-                .orElseThrow(() -> new ResourceNotFoundException("Category", req.categoryId()));
+                .orElseThrow(() -> new ResourceNotFoundException(Constants.CATEGORY, req.categoryId()));
 
         restaurant.setName(req.name());
         restaurant.setDescription(req.description());
@@ -71,7 +71,7 @@ public class RestaurantService {
     @Transactional
     public void deleteRestaurant(Integer id) {
         Restaurant restaurant = restaurantRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(RESTAURANT_NOT_FOUND, id));
+                .orElseThrow(() -> new ResourceNotFoundException(Constants.RESTAURANT, id));
         restaurantRepository.delete(restaurant);
     }
 }

@@ -24,7 +24,7 @@ public class ApplicationConfig {
     // It is responsible for loading user-specific data during authentication.
     @Bean
     public UserDetailsService userDetailsService() {
-        return email -> userRepository.findByEmail(email)
+        return email -> userRepository.findByEmailWithAuthorities(email)
                 .orElseThrow(() ->
                         new UsernameNotFoundException(
                                 "User not found with email " + email

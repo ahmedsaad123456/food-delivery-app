@@ -1,6 +1,6 @@
 package com.example.food_delivery_app.core.handler;
 
-import com.example.food_delivery_app.exceptions.ErrorCode;
+import com.example.food_delivery_app.common.ErrorCode;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;

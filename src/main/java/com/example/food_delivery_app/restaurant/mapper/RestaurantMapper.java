@@ -1,7 +1,9 @@
-package com.example.food_delivery_app.restaurant.dto;
+package com.example.food_delivery_app.restaurant.mapper;
 
 
 
+import com.example.food_delivery_app.restaurant.dto.CreateRestaurantRequest;
+import com.example.food_delivery_app.restaurant.dto.RestaurantResponse;
 import com.example.food_delivery_app.restaurant.entity.Category;
 import com.example.food_delivery_app.restaurant.entity.Restaurant;
 import org.mapstruct.Mapper;

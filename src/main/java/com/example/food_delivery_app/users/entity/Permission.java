@@ -1,0 +1,7 @@
+package com.example.food_delivery_app.users.entity;
+
+public enum Permission {
+    RESTAURANT_MANAGE, MENU_CREATE, MENU_UPDATE, MENU_DELETE,
+    ORDER_CREATE, ORDER_VIEW_OWN, ORDER_VIEW_ALL, ORDER_CANCEL, ORDER_UPDATE_STATUS,
+    DELIVERY_UPDATE, USER_MANAGE
+}

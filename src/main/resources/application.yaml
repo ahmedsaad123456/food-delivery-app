@@ -23,9 +23,6 @@ spring:
     basename: messages
     fallback-to-system-locale: false
 
-server:
-  servlet:
-    context-path: /api/v1
 
 logging:
   pattern:

@@ -13,7 +13,7 @@ import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Function;
+import java.util.UUID;
 
 /**
  * Creates and reads JWT tokens.
@@ -33,17 +33,17 @@ public class JwtService {
     @Value("${jwt-secret-key}")
     private String secretKey;
 
-    // Reads the username from the token. In our tokens the username is stored
-    // in the standard "subject" (sub) claim.
-    public String extractUsername(String token) {
-        return extractClaim(token, Claims::getSubject);
-    }
+
+    // ":900000" is the default value (15 minutes) if the property is not defined in application.yml
+    @Value("${jwt-access-expiration-ms:900000}")
+    private long accessExpirationMs;
+
+
 
     // Turns the Base64 secret string into a real cryptographic key object.
     // Keys.hmacShaKeyFor throws an exception if the key is shorter than 256 bits.
     private SecretKey getSigningKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
-        return Keys.hmacShaKeyFor(keyBytes);
+        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKey));
     }
 
     // Parses the token and returns ALL its claims (the payload).
@@ -51,22 +51,14 @@ public class JwtService {
     //  - parseSignedClaims     : parses the token and rejects it if it is not signed
     // This method also validates the expiration: if the token is expired, or the signature
     // is wrong, or the token is malformed, it THROWS a JwtException (see note below).
-    private Claims extractAllClaims(String token) {
-        return Jwts
-                .parser()
+    // Verifies the signature + expiration, then returns the payload.
+    // Throws JwtException if anything is wrong (expired, tampered, malformed, unsigned).
+    public Claims parse(String token) {
+        return Jwts.parser()
                 .verifyWith(getSigningKey())
                 .build()
-                .parseSignedClaims(token)
+                .parseSignedClaims(token) // parses the token and checks the signature and expiration
                 .getPayload();
-    }
-
-    // Generic helper: extract any single claim from the token.
-    // The caller says which claim it wants by passing a function:
-    //   extractClaim(token, Claims::getSubject)     -> username
-    //   extractClaim(token, Claims::getExpiration)  -> expiration date
-    public <T> T extractClaim(String token, Function<Claims, T> claimResolver) {
-        final Claims claims = extractAllClaims(token);
-        return claimResolver.apply(claims);
     }
 
     // Builds a signed token for a user, with optional extra claims (for example roles).
@@ -75,19 +67,13 @@ public class JwtService {
             UserDetails userDetails
     ) {
         long now = System.currentTimeMillis();
-
-        return Jwts.builder()
-                .claims(extraClaims)                                  // custom data
-                .subject(userDetails.getUsername())                   // who this token belongs to
-                .issuedAt(new Date(now))                              // when it was created
-                .expiration(new Date(now + 1000L * 60 * 60 * 24))     // 24 hours from now (in milliseconds)
-                .signWith(getSigningKey(), Jwts.SIG.HS256)            // sign with our key using HS256
-                .compact();                                           // build the final "xxx.yyy.zzz" string
-    }
-
-    // Reads the expiration date from the token.
-    public Date extractExpiration(String token) {
-        return extractClaim(token, Claims::getExpiration);
+        return Jwts.builder().claims(extraClaims)
+                .id(UUID.randomUUID().toString())              // jti (JWT ID) claim: a unique identifier for this token, to prevent replay attacks
+                .subject(userDetails.getUsername())            // the email
+                .issuedAt(new Date(now))
+                .expiration(new Date(now + accessExpirationMs))
+                .signWith(getSigningKey(), Jwts.SIG.HS256)
+                .compact();                                        // build the final "xxx.yyy.zzz" string
     }
 
     // Shortcut: generate a token with no extra claims.
@@ -95,16 +81,12 @@ public class JwtService {
         return generateToken(new HashMap<>(), userDetails);
     }
 
-    // true if the expiration date is in the past.
-    public boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(new Date());
-    }
+
 
     // A token is valid when it belongs to this user AND has not expired.
     // (The signature is checked automatically while parsing the token.)
-    public boolean isTokenValid(String token, UserDetails userDetails) {
-        final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+    // The parser already rejected expired tokens, so we only compare the subject here.
+    public boolean isTokenValid(Claims claims, UserDetails userDetails) {
+        return claims.getSubject().equals(userDetails.getUsername());
     }
-
 }

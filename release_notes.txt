@@ -1,5 +1,6 @@
-### Authentication Improvements & Exception Handling
+### Authentication, Token Management & Authorization
 
-- Made minor improvements to the authentication flow.
-- Added custom exception handling for authentication-related errors.
-- Improved understanding of password hashing, JWT authentication, and Spring Security.
+- Added Redis-based refresh token storage with token rotation.
+- Implemented logout with refresh token invalidation and access token blacklisting.
+- Added role and permission management using Spring Data JPA and Flyway.
+- Integrated database-driven authorities with Spring Security.

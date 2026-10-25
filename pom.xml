@@ -14,7 +14,7 @@
 
 	<groupId>com.example</groupId>
 	<artifactId>food_delivery_app</artifactId>
-	<version>4.1.0</version>
+	<version>5.0.0</version>
 	<name>food_delivery_app</name>
 	<description>Food Delivery Application</description>
 
@@ -31,6 +31,7 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-flyway</artifactId>
 		</dependency>
+
 
 		<dependency>
 			<groupId>org.flywaydb</groupId>
@@ -126,6 +127,10 @@
 			<artifactId>spring-boot-docker-compose</artifactId>
 			<scope>runtime</scope>
 			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-redis</artifactId>
 		</dependency>
 
 		<!-- Test dependencies -->

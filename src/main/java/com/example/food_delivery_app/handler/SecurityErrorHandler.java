@@ -1,9 +1,8 @@
 package com.example.food_delivery_app.handler;
 
-import com.example.food_delivery_app.exceptions.ErrorCode;
+import com.example.food_delivery_app.common.ErrorCode;
 import com.example.food_delivery_app.common.Messages;
 import com.example.food_delivery_app.common.ApiResponse;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +29,7 @@ public class SecurityErrorHandler implements AuthenticationEntryPoint, AccessDen
     }
 
 
-    private void write(HttpServletResponse response, ErrorCode code) throws IOException {
+    public void write(HttpServletResponse response, ErrorCode code) throws IOException {
         response.setStatus(code.getStatus().value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");
@@ -39,7 +38,7 @@ public class SecurityErrorHandler implements AuthenticationEntryPoint, AccessDen
     }
 
     @Override
-    public void handle(HttpServletRequest request, HttpServletResponse response, org.springframework.security.access.AccessDeniedException accessDeniedException) throws IOException, ServletException {
+    public void handle(HttpServletRequest request, HttpServletResponse response, org.springframework.security.access.AccessDeniedException accessDeniedException) throws IOException {
         write(response, ErrorCode.FORBIDDEN);
 
     }

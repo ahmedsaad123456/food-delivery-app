@@ -11,7 +11,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.Instant;
 import java.util.Collection;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -35,9 +36,12 @@ public class User implements UserDetails {
     @Column(length = 11)
     private String phone;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Role role;
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "user_roles",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id"))
+    @Builder.Default                                  // needed because you use User.builder()
+    private Set<RoleEntity> roleEntities = new HashSet<>();
     @Column(nullable = false)
     private Boolean enabled= true;
     @CreationTimestamp
@@ -50,7 +54,14 @@ public class User implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority(role.name()));
+        Set<GrantedAuthority> authorities = new HashSet<>();
+        for (RoleEntity role : roleEntities) {
+            authorities.add(new SimpleGrantedAuthority("ROLE_" + role.getName().name()));
+            for (PermissionEntity p : role.getPermissions()) {
+                authorities.add(new SimpleGrantedAuthority(p.getName().name()));
+            }
+        }
+        return authorities;
     }
 
     @Override

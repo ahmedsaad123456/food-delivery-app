@@ -11,28 +11,25 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
-import java.net.URI;
-
 @RestController
-@RequestMapping("restaurants")
+@RequestMapping("/api/v1/restaurants")
 @RequiredArgsConstructor
 public class RestaurantController {
 
     private final RestaurantService service;
 
     @PostMapping
-    public ResponseEntity<ApiResponse<RestaurantResponse>> create(
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApiResponse<RestaurantResponse> createRestaurant(
             @Valid @RequestBody CreateRestaurantRequest request) {
-        RestaurantResponse created = service.create(request);
-        return ResponseEntity
-                .created(URI.create("/api/restaurants/" + created.id())) // Set the Location header to the URI of the newly created resource (201)
-                .body(ApiResponse.ok(created));
+        RestaurantResponse created = service.createRestaurant(request);
+        return ApiResponse.ok(created);
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<RestaurantResponse>> getById(@RequestParam Integer id) {
-        RestaurantResponse restaurant = service.getById(id);
-        return ResponseEntity.ok(ApiResponse.ok(restaurant));
+    public ApiResponse<RestaurantResponse> getRestaurantById(@RequestParam Integer id) {
+        RestaurantResponse restaurant = service.getRestaurantById(id);
+        return ApiResponse.ok(restaurant);
     }
 
     @GetMapping("/all")

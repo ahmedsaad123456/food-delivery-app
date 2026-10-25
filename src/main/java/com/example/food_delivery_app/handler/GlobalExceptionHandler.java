@@ -1,13 +1,14 @@
 package com.example.food_delivery_app.handler;
 
 import com.example.food_delivery_app.exceptions.AppException;
-import com.example.food_delivery_app.exceptions.ErrorCode;
+import com.example.food_delivery_app.common.ErrorCode;
 import com.example.food_delivery_app.common.Messages;
 import com.example.food_delivery_app.common.ApiResponse;
 import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.Nullable;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -123,5 +124,10 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleAccessDenied(AccessDeniedException ex) {
         log.warn("Access denied");
         return build(ErrorCode.FORBIDDEN);
+    }
+
+    @ExceptionHandler(DataAccessResourceFailureException.class)
+    public ResponseEntity<ApiResponse<Void>> handleResourceFailure(DataAccessResourceFailureException ex) {
+        return build(ErrorCode.SERVICE_UNAVAILABLE);
     }
 }

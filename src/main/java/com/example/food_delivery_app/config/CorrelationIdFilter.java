@@ -19,7 +19,6 @@ import java.util.UUID;
 /**
  * Gives every incoming HTTP request a unique "correlation id" so that all log lines
  * written while handling that request can be grouped together.
- *
  * How it works:
  *  1. Read the id from the "X-Correlation-Id" request header (if a client/gateway sent one),
  *     otherwise generate a new random UUID.
@@ -27,7 +26,6 @@ import java.util.UUID;
  *     in application.yml prints it on every line using %X{correlationId}.
  *  3. Echo the id back in the response header so the client can report it to us.
  *  4. Always remove the id when the request finishes.
- *
  * Runs once per request (OncePerRequestFilter) and before every other filter
  * (HIGHEST_PRECEDENCE), so even Spring Security logs carry the id.
  */

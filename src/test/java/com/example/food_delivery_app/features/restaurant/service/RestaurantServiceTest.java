@@ -2,7 +2,7 @@ package com.example.food_delivery_app.features.restaurant.service;
 
 import com.example.food_delivery_app.exceptions.ResourceNotFoundException;
 import com.example.food_delivery_app.restaurant.dto.CreateRestaurantRequest;
-import com.example.food_delivery_app.restaurant.dto.RestaurantMapper;
+import com.example.food_delivery_app.restaurant.mapper.RestaurantMapper;
 import com.example.food_delivery_app.restaurant.dto.RestaurantResponse;
 import com.example.food_delivery_app.restaurant.entity.Category;
 import com.example.food_delivery_app.restaurant.entity.Restaurant;
@@ -103,7 +103,7 @@ class RestaurantServiceTest {
             when(mapper.toResponse(restaurant)).thenReturn(restaurantResponse);
 
             // when
-            final Integer restaurantId = restaurantService.create(createRestaurantRequest).id();
+            final Integer restaurantId = restaurantService.createRestaurant(createRestaurantRequest).id();
 
             // Then
             assertNotNull(restaurantId);
@@ -126,7 +126,7 @@ class RestaurantServiceTest {
             when(categoryRepository.findById(createRestaurantRequest.categoryId())).thenReturn(Optional.empty());
 
             // When & Then
-            assertThrows(ResourceNotFoundException.class, () -> restaurantService.create(createRestaurantRequest));
+            assertThrows(ResourceNotFoundException.class, () -> restaurantService.createRestaurant(createRestaurantRequest));
             verify(categoryRepository, times(1)).findById(createRestaurantRequest.categoryId());
             verifyNoInteractions(mapper);
             verifyNoInteractions(restaurantRepository);
