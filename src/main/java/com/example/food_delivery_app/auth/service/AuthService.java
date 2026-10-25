@@ -67,8 +67,13 @@ public class AuthService {
                         request.getEmail(),
                         request.getPassword()));
 
+        Object principal = auth.getPrincipal();
 
-        return generateAccessTokenAndRefreshToken((User) auth.getPrincipal()); // authenticate
+        if (!(principal instanceof User user)) {
+            throw new IllegalStateException("Invalid authenticated principal");
+        }
+
+        return generateAccessTokenAndRefreshToken(user);// authenticate
     }
 
     // One place that creates both tokens, used by register and login

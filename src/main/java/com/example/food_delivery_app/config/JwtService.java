@@ -68,7 +68,7 @@ public class JwtService {
     ) {
         long now = System.currentTimeMillis();
         return Jwts.builder().claims(extraClaims)
-                .id(UUID.randomUUID().toString())              // jti (JWT ID) claim: a unique identifier for this token, to prevent replay attacks
+                .id(UUID.randomUUID().toString())              // jti (JWT ID) claim: a unique identifier for this token, to prevent replay attacks (used for blacklisting)
                 .subject(userDetails.getUsername())            // the email
                 .issuedAt(new Date(now))
                 .expiration(new Date(now + accessExpirationMs))

@@ -1,6 +1,5 @@
-### Authentication, Token Management & Authorization
+### Fix minor errors
 
-- Added Redis-based refresh token storage with token rotation.
-- Implemented logout with refresh token invalidation and access token blacklisting.
-- Added role and permission management using Spring Data JPA and Flyway.
-- Integrated database-driven authorities with Spring Security.
+- Fix the Queries in the User Repository.
+- Fix the NullPointer Exception in the Auth Service Layer.
+- Fix the permitted endpoints in the security configuration.
