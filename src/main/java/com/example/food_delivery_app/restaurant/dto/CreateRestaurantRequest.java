@@ -28,4 +28,6 @@ public record CreateRestaurantRequest(
         String phone,
 
         Boolean open
+
+
 ) {}

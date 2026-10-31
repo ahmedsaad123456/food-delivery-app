@@ -33,6 +33,8 @@ public interface RestaurantMapper {
     @Mapping(target = "open",        source = "request.open")
     Restaurant toEntity(CreateRestaurantRequest request, Category category);
 
+    // N +1 problem: when we map a list of restaurants to a list of responses,
+    // we need to make sure that the category is fetched for each restaurant.
     List<RestaurantResponse> toListResponse(
             List<Restaurant> restaurants
     );

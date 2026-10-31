@@ -1,5 +1,6 @@
 package com.example.food_delivery_app.restaurant.entity;
 
+import com.example.food_delivery_app.users.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -48,4 +49,8 @@ public class Restaurant {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id")
+    private User owner;
 }

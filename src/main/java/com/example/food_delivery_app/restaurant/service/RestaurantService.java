@@ -9,6 +9,8 @@ import com.example.food_delivery_app.restaurant.entity.Category;
 import com.example.food_delivery_app.restaurant.entity.Restaurant;
 import com.example.food_delivery_app.restaurant.repository.CategoryRepository;
 import com.example.food_delivery_app.restaurant.repository.RestaurantRepository;
+import com.example.food_delivery_app.users.entity.User;
+import com.example.food_delivery_app.users.repository.UserRepository;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,17 +22,22 @@ import java.util.List;
 public class RestaurantService {
 
     private final RestaurantRepository restaurantRepository;
+    private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
     private final RestaurantMapper mapper;
 
 
 
     @Transactional
-    public RestaurantResponse createRestaurant(CreateRestaurantRequest req) {
+    public RestaurantResponse createRestaurant(CreateRestaurantRequest req , String ownerEmail) {
         Category category = categoryRepository.findById(req.categoryId())
                 .orElseThrow(() -> new ResourceNotFoundException(Constants.CATEGORY, req.categoryId()));
 
-        Restaurant saved = restaurantRepository.save(mapper.toEntity(req, category));
+        // service.create(request, String ownerEmail)
+        User owner = userRepository.findByEmail(ownerEmail).orElseThrow(() -> new ResourceNotFoundException(Constants.USER, ownerEmail));
+        var restaurant = mapper.toEntity(req, category);
+        restaurant.setOwner(owner);
+        Restaurant saved = restaurantRepository.save(restaurant);
         return mapper.toResponse(saved);
     }
 

@@ -22,7 +22,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
-import java.nio.file.AccessDeniedException;
+import org.springframework.security.access.AccessDeniedException;
+
 import java.sql.SQLException;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -51,7 +52,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(AppException.class)
     public ResponseEntity<ApiResponse<Void>> handleAppException(AppException ex) {
         log.warn("{}", ex.getErrorCode());
-        return build(ex.getErrorCode(), (Object) ex.getArgs());
+        return build(ex.getErrorCode(), (Object[]) ex.getArgs());
     }
 
     @Override
@@ -130,4 +131,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleResourceFailure(DataAccessResourceFailureException ex) {
         return build(ErrorCode.SERVICE_UNAVAILABLE);
     }
+
+
 }

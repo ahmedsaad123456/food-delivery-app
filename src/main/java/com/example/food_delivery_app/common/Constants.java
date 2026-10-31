@@ -32,6 +32,10 @@ public class Constants {
 
     public static final String CATEGORY = "category";
 
+    public static final String MENU_ITEM = "MenuItem";
+
+    public static final String USER = "User";
+
 
 
 

@@ -1,5 +1,5 @@
-### Fix minor errors
+### Security and Authorization Improvements
 
-- Fix the Queries in the User Repository.
-- Fix the NullPointer Exception in the Auth Service Layer.
-- Fix the permitted endpoints in the security configuration.
+- Issue a new refresh token and invalidate the previous one upon refresh.
+- Invalidate the old access token after logout.
+- Prevent restaurant owners from modifying restaurants they do not own.
