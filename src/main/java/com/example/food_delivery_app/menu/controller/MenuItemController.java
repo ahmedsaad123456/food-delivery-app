@@ -3,6 +3,7 @@ package com.example.food_delivery_app.menu.controller;
 import com.example.food_delivery_app.common.ApiResponse;
 import com.example.food_delivery_app.menu.dto.CreateMenuItemRequest;
 import com.example.food_delivery_app.menu.dto.MenuItemResponse;
+import com.example.food_delivery_app.menu.dto.MenuSectionResponse;
 import com.example.food_delivery_app.menu.dto.UpdateMenuItemRequest;
 import com.example.food_delivery_app.menu.service.MenuItemService;
 import jakarta.validation.Valid;
@@ -23,6 +24,11 @@ public class MenuItemController {
     @GetMapping("/restaurants/{restaurantId}/menu-items")
     public ApiResponse<List<MenuItemResponse>> findMenuItemsByRestaurant(@PathVariable Integer restaurantId) {
         return ApiResponse.ok(service.findMenuItemsByRestaurant(restaurantId));
+    }
+
+    @GetMapping("/restaurants/{restaurantId}/menu-sections")
+    public ApiResponse< List<MenuSectionResponse> >findMenuSectionsByRestaurant(@PathVariable Integer restaurantId) {
+        return ApiResponse.ok( service.menuGroupedBySection(restaurantId));
     }
 
     @PreAuthorize("hasAuthority('MENU_CREATE') and @restaurantSecurity.isOwner(#restaurantId, authentication)")
@@ -52,4 +58,6 @@ public class MenuItemController {
     public void deleteMenuItem(@PathVariable Integer id) {
         service.deleteMenuItem(id);
     }
+
+
 }

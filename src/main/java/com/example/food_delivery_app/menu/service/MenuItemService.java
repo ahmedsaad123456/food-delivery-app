@@ -1,9 +1,12 @@
 package com.example.food_delivery_app.menu.service;
 
 import com.example.food_delivery_app.common.Constants;
+import com.example.food_delivery_app.common.ErrorCode;
+import com.example.food_delivery_app.exceptions.AppException;
 import com.example.food_delivery_app.exceptions.ResourceNotFoundException;
 import com.example.food_delivery_app.menu.dto.CreateMenuItemRequest;
 import com.example.food_delivery_app.menu.dto.MenuItemResponse;
+import com.example.food_delivery_app.menu.dto.MenuSectionResponse;
 import com.example.food_delivery_app.menu.dto.UpdateMenuItemRequest;
 import com.example.food_delivery_app.menu.entity.MenuItem;
 import com.example.food_delivery_app.menu.mapper.MenuItemMapper;
@@ -14,7 +17,9 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -61,8 +66,24 @@ public class MenuItemService {
         menuItemRepository.deleteById(id);
     }
 
+    @Transactional(readOnly = true)
+    public List<MenuSectionResponse> menuGroupedBySection(Integer restaurantId) {
+        if (!restaurantRepository.existsById(restaurantId)) {
+            throw new AppException(ErrorCode.RESOURCE_NOT_FOUND, Constants.RESTAURANT, restaurantId);
+        }
+        return menuItemRepository.findByRestaurantIdOrderBySectionAscNameAsc(restaurantId).stream()
+                .map(mapper::toResponse) // map MenuItem to MenuItemResponse
+                .collect(Collectors.groupingBy(
+                        MenuItemResponse::section, LinkedHashMap::new, Collectors.toList())) // group by section while preserving order
+                .entrySet().stream() // convert the map to a stream of entries
+                .map(e -> new MenuSectionResponse(e.getKey(), e.getValue())) // map each entry to a MenuSectionResponse
+                .toList();
+    }
+
     private MenuItem getOrThrow(Integer id) {
         return menuItemRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(Constants.MENU_ITEM, id));
     }
+
+
 }

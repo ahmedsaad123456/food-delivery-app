@@ -1,5 +1,9 @@
-### Security and Authorization Improvements
+### Restaurant Search and Performance Improvements
 
-- Issue a new refresh token and invalidate the previous one upon refresh.
-- Invalidate the old access token after logout.
-- Prevent restaurant owners from modifying restaurants they do not own.
+- Add JPA Specification support to RestaurantRepository.
+- Implement dynamic restaurant filtering and search criteria.
+- Add paginated restaurant responses with sorting and maximum page size.
+- Group menu items by category using Java Streams.
+- Detect and resolve N+1 query issues using EntityGraph.
+- Use DTO projections to optimize query results.
+- Measure and document endpoint response times before and after optimization.
