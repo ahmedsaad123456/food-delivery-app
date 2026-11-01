@@ -38,6 +38,18 @@ public class Constants {
 
     public static final String PRICE = "price";
 
+    public static final String EGP = "EGP";
+
+    public static final String AMOUNT = "amount";
+
+    public static final String CURRENCY = "currency";
+
+    public static final int MAX_QUANTITY = 99;
+
+    public static final String MENU_ITEM_ERROR = "Menu Item";
+
+    public static final String MENU_CACHE = "menu";
+
 
 
 

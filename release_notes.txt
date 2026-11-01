@@ -1,9 +1,8 @@
-### Restaurant Search and Performance Improvements
+### Cart, Pricing, and Design Patterns
 
-- Add JPA Specification support to RestaurantRepository.
-- Implement dynamic restaurant filtering and search criteria.
-- Add paginated restaurant responses with sorting and maximum page size.
-- Group menu items by category using Java Streams.
-- Detect and resolve N+1 query issues using EntityGraph.
-- Use DTO projections to optimize query results.
-- Measure and document endpoint response times before and after optimization.
+- Implement `Money` as an immutable Value Object.
+- Implement Redis-based cart operations (Add, Remove, Update, Get).
+- Add menu caching with `@Cacheable`, `@CacheEvict`, and TTL.
+- Implement discount strategies (percentage, fixed amount, free delivery).
+- Apply LSP using discount contracts and shared contract tests.
+- Implement the Decorator Pattern for taxes and service fees.

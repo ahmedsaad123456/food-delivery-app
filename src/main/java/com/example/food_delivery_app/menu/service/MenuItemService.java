@@ -13,6 +13,8 @@ import com.example.food_delivery_app.menu.mapper.MenuItemMapper;
 import com.example.food_delivery_app.menu.repository.MenuItemRepository;
 import com.example.food_delivery_app.restaurant.entity.Restaurant;
 import com.example.food_delivery_app.restaurant.repository.RestaurantRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,6 +31,9 @@ public class MenuItemService {
     private final RestaurantRepository restaurantRepository;
     private final MenuItemMapper mapper;
 
+
+    // cacheable: if the same restaurantId is requested again, return the cached result instead of querying the database
+    @Cacheable(cacheNames = Constants.MENU_CACHE, key = "#restaurantId")
     @Transactional(readOnly = true)
     public List<MenuItemResponse> findMenuItemsByRestaurant(Integer restaurantId) {
         if (!restaurantRepository.existsById(restaurantId)) {
@@ -42,6 +47,9 @@ public class MenuItemService {
         return mapper.toResponse(getOrThrow(id));
     }
 
+
+    // cacheEvict: when a menu item is created, updated, or deleted, the cache for that restaurantId is invalidated so that the next request will fetch fresh data from the database
+    @CacheEvict(cacheNames = Constants.MENU_CACHE, key = "#restaurantId")
     @Transactional
     public MenuItemResponse createMenuItem(Integer restaurantId, CreateMenuItemRequest request) {
         Restaurant restaurant = restaurantRepository.findById(restaurantId)
@@ -51,6 +59,7 @@ public class MenuItemService {
         return mapper.toResponse(menuItemRepository.save(item));
     }
 
+    @CacheEvict(cacheNames = Constants.MENU_CACHE, allEntries = true)
     @Transactional
     public MenuItemResponse updateMenuItem(Integer id, UpdateMenuItemRequest request) {
         MenuItem item = getOrThrow(id);
@@ -58,6 +67,7 @@ public class MenuItemService {
         return mapper.toResponse(item);
     }
 
+    @CacheEvict(cacheNames = Constants.MENU_CACHE, allEntries = true)
     @Transactional
     public void deleteMenuItem(Integer id) {
         if (!menuItemRepository.existsById(id)) {

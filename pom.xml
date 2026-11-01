@@ -14,7 +14,7 @@
 
 	<groupId>com.example</groupId>
 	<artifactId>food_delivery_app</artifactId>
-	<version>6.0.0</version>
+	<version>7.0.0</version>
 	<name>food_delivery_app</name>
 	<description>Food Delivery Application</description>
 
@@ -30,6 +30,16 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-flyway</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-redis</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-cache</artifactId>
 		</dependency>
 
 
