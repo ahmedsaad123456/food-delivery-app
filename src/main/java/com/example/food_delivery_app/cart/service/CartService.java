@@ -20,6 +20,7 @@ import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -33,12 +34,25 @@ public class CartService {
 
     public void addToCart(Integer userId, Integer menuItemId, int quantity) {
         MenuItem item = menuItemRepository.findById(menuItemId)
-                .orElseThrow(() -> new ResourceNotFoundException(Constants.MENU_ITEM_ERROR, menuItemId));
-        if (!item.isAvailable()) {                       // use getAvailable() if your field is Boolean
+                .orElseThrow(() -> new ResourceNotFoundException("MenuItem", menuItemId));
+        if (!item.isAvailable()) {
             throw new AppException(ErrorCode.MENU_ITEM_UNAVAILABLE, item.getName());
         }
+        Integer restaurantId = item.getRestaurant().getId();
+
+        // the cart must belong to ONE restaurant
+        // get all menu item ids in the cart for this user,
+        // then get the restaurant ids for those items, and check if they are all the same as the restaurant id of the item being added
+        Set<Integer> cartItemIds = cartRepository.findAll(userId).keySet();
+        if (!cartItemIds.isEmpty()) {
+            Set<Integer> cartRestaurants = menuItemRepository.findRestaurantIds(cartItemIds);
+            if (!cartRestaurants.isEmpty() && !cartRestaurants.equals(Set.of(restaurantId))) {
+                throw new AppException(ErrorCode.CART_MIXED_RESTAURANTS);
+            }
+        }
+
         long newQuantity = cartRepository.increment(userId, menuItemId, quantity);
-        if (newQuantity > Constants.MAX_QUANTITY) {                // repeated adds must not pass the limit
+        if (newQuantity > Constants.MAX_QUANTITY) {
             cartRepository.setQuantity(userId, menuItemId, Constants.MAX_QUANTITY);
         }
 
@@ -93,4 +107,7 @@ public class CartService {
         return pricingService.price(getCart(userId).subtotal(), type, discountValue);
     }
 
+    public void clearCart(Integer userId) {
+        cartRepository.clear(userId);
     }
+}

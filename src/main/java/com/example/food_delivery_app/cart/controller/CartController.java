@@ -11,7 +11,7 @@ import com.example.food_delivery_app.common.ApiResponse;
 import com.example.food_delivery_app.users.entity.User;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -38,23 +38,36 @@ public class CartController {
     }
 
     @PostMapping("/items")
-    public ResponseEntity<Void> add(@AuthenticationPrincipal User user,
-                                    @Valid @RequestBody AddToCartRequest request) {
+    @ResponseStatus(code = HttpStatus.NO_CONTENT)
+    public Void addItemToCart(@AuthenticationPrincipal User user,
+                                              @Valid @RequestBody AddToCartRequest request) {
         cartService.addToCart(user.getId(), request.menuItemId(), request.quantity());
-        return ResponseEntity.noContent().build();
+        return null;
     }
 
     @PutMapping("/items/{menuItemId}")
-    public ResponseEntity<Void> update(@AuthenticationPrincipal User user,
+    @ResponseStatus(code = HttpStatus.NO_CONTENT)
+
+    public Void update(@AuthenticationPrincipal User user,
                                        @PathVariable Integer menuItemId,
                                        @Valid @RequestBody UpdateQuantityRequest request) {
         cartService.updateQuantity(user.getId(), menuItemId, request.quantity());
-        return ResponseEntity.noContent().build();
+        return null;
     }
 
     @DeleteMapping("/items/{menuItemId}")
-    public ResponseEntity<Void> remove(@AuthenticationPrincipal User user, @PathVariable Integer menuItemId) {
+    @ResponseStatus(code = HttpStatus.NO_CONTENT)
+
+    public Void remove(@AuthenticationPrincipal User user, @PathVariable Integer menuItemId) {
         cartService.removeFromCart(user.getId(), menuItemId);
-        return ResponseEntity.noContent().build();
+        return null;
+    }
+
+    @DeleteMapping
+    @ResponseStatus(code = HttpStatus.NO_CONTENT)
+
+    public Void clear(@AuthenticationPrincipal User user) {
+        cartService.clearCart(user.getId());
+        return null;
     }
 }

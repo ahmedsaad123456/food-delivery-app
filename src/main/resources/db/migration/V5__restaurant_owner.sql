@@ -2,4 +2,4 @@
 -- Needed later for ownership checks (a user may only edit his own restaurant).
 -- Nullable so that restaurants created before this migration remain valid.
 ALTER TABLE restaurants
-    ADD COLUMN owner_id BIGINT REFERENCES users (id) ON DELETE SET NULL;
+    ADD COLUMN owner_id INTEGER REFERENCES users (id) ON DELETE SET NULL;

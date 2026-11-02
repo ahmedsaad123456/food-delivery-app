@@ -1,7 +1,7 @@
 -- Day 4: users for authentication.
 -- "role" is a temporary column. Day 5 replaces it with roles + permissions tables.
 CREATE TABLE users (
-    id             BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    id             INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     email          VARCHAR(255) NOT NULL UNIQUE,
     password_hash  VARCHAR(100) NOT NULL,
     full_name      VARCHAR(150) NOT NULL,

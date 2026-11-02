@@ -50,6 +50,8 @@ public class Constants {
 
     public static final String MENU_CACHE = "menu";
 
+    public static final String ORDER = "Order";
+
 
 
 

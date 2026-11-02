@@ -1,8 +1,10 @@
-### Cart, Pricing, and Design Patterns
+### Orders and Order Placement
 
-- Implement `Money` as an immutable Value Object.
-- Implement Redis-based cart operations (Add, Remove, Update, Get).
-- Add menu caching with `@Cacheable`, `@CacheEvict`, and TTL.
-- Implement discount strategies (percentage, fixed amount, free delivery).
-- Apply LSP using discount contracts and shared contract tests.
-- Implement the Decorator Pattern for taxes and service fees.
+- Create `Order` and `OrderItem` entities using the Aggregate Root pattern.
+- Store order item snapshots (name and price) to preserve historical order data.
+- Implement order creation and status transitions inside the `Order` entity.
+- Define `OrderStatus` enum with allowed state transitions.
+- Implement `DomainException` for invalid order state transitions.
+- Implement `PlaceOrderCommand` and its handler to process order placement.
+- Validate cart items against the menu and recalculate prices before creating orders.
+- Save orders and clear the Redis cart within a single transaction.
