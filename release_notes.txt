@@ -1,10 +1,6 @@
-### Orders and Order Placement
+### Notification Service
 
-- Create `Order` and `OrderItem` entities using the Aggregate Root pattern.
-- Store order item snapshots (name and price) to preserve historical order data.
-- Implement order creation and status transitions inside the `Order` entity.
-- Define `OrderStatus` enum with allowed state transitions.
-- Implement `DomainException` for invalid order state transitions.
-- Implement `PlaceOrderCommand` and its handler to process order placement.
-- Validate cart items against the menu and recalculate prices before creating orders.
-- Save orders and clear the Redis cart within a single transaction.
+- Implement different types of notifications (email, SMS, push notifications).
+- Apply ISP (Interface Segregation Principle) to create separate interfaces for each notification type.
+- Create Every notification type should have its own interface, allowing clients to depend only on the methods they need.
+- Add @EventListener to handle notification events and trigger the appropriate notification service.

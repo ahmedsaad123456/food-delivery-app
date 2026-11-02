@@ -1,4 +1,4 @@
-package com.example.food_delivery_app.order.utils;
+package com.example.food_delivery_app.order.events;
 
 import com.example.food_delivery_app.cart.repository.CartRepository;
 import lombok.RequiredArgsConstructor;

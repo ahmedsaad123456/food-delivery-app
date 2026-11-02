@@ -20,7 +20,7 @@ import com.example.food_delivery_app.order.entity.OrderStatus;
 import com.example.food_delivery_app.order.mapper.OrderMapper;
 import com.example.food_delivery_app.order.repository.OrderRepository;
 import com.example.food_delivery_app.order.specification.OrderSpecs;
-import com.example.food_delivery_app.order.utils.OrderPlacedEvent;
+import com.example.food_delivery_app.order.events.OrderPlacedEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Pageable;
