@@ -34,12 +34,12 @@ public class Order {
     @Enumerated(EnumType.STRING)            // store "PAID", not its ordinal number
     private OrderStatus status;
 
-    private BigDecimal subtotal;
+    private BigDecimal subtotal;  // subtotal is items total
     @Column(name = "delivery_fee") private BigDecimal deliveryFee;
     private BigDecimal discount;
 
     @Column(name = "total_amount")
-    private BigDecimal total;
+    private BigDecimal total; // subtotal + delivery + tax + fee - discount
 
 
     // the items in the order, but do not allow modification of the list from outside the Order class

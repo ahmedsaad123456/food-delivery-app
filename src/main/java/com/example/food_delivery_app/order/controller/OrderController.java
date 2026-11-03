@@ -28,7 +28,7 @@ public class OrderController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-
+    @PreAuthorize("hasAuthority('ORDER_CREATE')")
     public ApiResponse<OrderResponse> placeOrder(
             @AuthenticationPrincipal User user,
             @Valid @RequestBody(required = false) PlaceOrderRequest request) {

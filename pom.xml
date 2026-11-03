@@ -81,6 +81,12 @@
 			<artifactId>spring-boot-starter-security</artifactId>
 		</dependency>
 
+		<dependency>
+			<groupId>com.stripe</groupId>
+			<artifactId>stripe-java</artifactId>
+			<version>34.1.0</version>
+		</dependency>
+
 
 		<!-- Web -->
 		<dependency>

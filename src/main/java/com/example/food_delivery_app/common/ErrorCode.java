@@ -27,7 +27,16 @@ public enum ErrorCode {
     EMAIL_ALREADY_REGISTERED(HttpStatus.CONFLICT),
     TEMP_SESSION_EXPIRED(HttpStatus.UNAUTHORIZED),
 
-    INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED);
+    INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED),
+
+    // payment
+    ORDER_NOT_FOUND(HttpStatus.NOT_FOUND),
+    PAYMENT_ORDER_NOT_PAYABLE(HttpStatus.BAD_REQUEST),
+    PAYMENT_PROVIDER_ERROR(HttpStatus.BAD_GATEWAY);
+
+
+
+
 
 
     private final HttpStatus status;
