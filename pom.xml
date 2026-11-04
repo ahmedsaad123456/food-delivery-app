@@ -14,7 +14,7 @@
 
 	<groupId>com.example</groupId>
 	<artifactId>food_delivery_app</artifactId>
-	<version>11.1.0</version>
+	<version>12.0.0</version>
 	<name>food_delivery_app</name>
 	<description>Food Delivery Application</description>
 
@@ -23,6 +23,18 @@
 		<org.mapstruct.version>1.6.3</org.mapstruct.version>
 		<lombok.version>1.18.38</lombok.version>
 	</properties>
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.testcontainers</groupId>
+				<artifactId>testcontainers-bom</artifactId>
+				<version>2.0.5</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
 
 	<dependencies>
 
@@ -144,10 +156,7 @@
 			<scope>runtime</scope>
 			<optional>true</optional>
 		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-data-redis</artifactId>
-		</dependency>
+
 
 		<!-- Test dependencies -->
 		<dependency>
@@ -155,6 +164,24 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-testcontainers</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers-junit-jupiter</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers-postgresql</artifactId>
+			<scope>test</scope>
+		</dependency>
+
 
 
 		<dependency>

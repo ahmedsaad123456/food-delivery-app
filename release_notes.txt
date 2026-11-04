@@ -1,9 +1,9 @@
-### Make the code more clean
+### Inventory Concurrency & Overselling Protection
 
-- Authorization -> move them to the restaurant and order features inside permissions folder
-- Remove all unused imports
-- Change var to data types
-- Change names of mappers, services and others to be more clear ( getOrThrow for example )
-- Remove pageable object from the controller, and pass page number, size and pass it to the service and the service make the pageable and pass to repo
-- Move menu in the restaurant feature
-- The annotation should be above the methods directly
+- Added a concurrency test using `ExecutorService` and `CountDownLatch` to simulate 50 threads attempting to purchase the last 5 items, reproducing the overselling problem.
+- Implemented and tested three concurrency control strategies:
+  - **Optimistic Locking:** Added `@Version` with retry handling for `OptimisticLockingFailureException`.
+  - **Pessimistic Locking:** Added `@Lock(LockModeType.PESSIMISTIC_WRITE)` to the repository query.
+  - **Atomic SQL Update:** Used a conditional `UPDATE` statement to prevent stock from dropping below zero.
+- Compared all three approaches in terms of simplicity and performance under high concurrency.
+- Selected the most suitable approach for inventory management.
