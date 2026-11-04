@@ -1,4 +1,4 @@
-package com.example.food_delivery_app.authorization;
+package com.example.food_delivery_app.restaurant.security;
 
 import com.example.food_delivery_app.menu.repository.MenuItemRepository;
 import com.example.food_delivery_app.restaurant.repository.RestaurantRepository;

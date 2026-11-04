@@ -4,6 +4,6 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-public record MenuItemResponse(Integer id, Integer restaurantId, String section, String name,
+public record MenuItemResponse(Integer id, Integer restaurantId, String section, String name, Integer stock,
                                String description, BigDecimal price, boolean available,
                                Instant createdAt) implements Serializable {} // Serializable is needed for caching with Redis

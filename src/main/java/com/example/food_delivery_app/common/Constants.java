@@ -17,6 +17,8 @@ public class Constants {
 
     public static final String CUSTOMER_ERROR = "CUSTOMER role is missing, check the Flyway migration";
 
+    public static final String WEBHOOK_SUCCESS = "Webhook processed successfully";
+
     public static final String TOKEN_KEY  = "refresh:token:";
     public static final String USED_KEY   = "refresh:used:";
     public static final String FAMILY_KEY = "refresh:family:";

@@ -4,6 +4,7 @@ import com.example.food_delivery_app.common.Constants;
 import com.example.food_delivery_app.common.ErrorCode;
 import com.example.food_delivery_app.exceptions.AppException;
 import com.example.food_delivery_app.exceptions.ResourceNotFoundException;
+import com.example.food_delivery_app.menu.service.MenuItemService;
 import com.example.food_delivery_app.order.entity.Order;
 import com.example.food_delivery_app.order.entity.OrderItem;
 import com.example.food_delivery_app.order.entity.OrderStatus;
@@ -34,6 +35,7 @@ public class PaymentService {
 
     private final OrderRepository orderRepository;
     private final PaymentRepository paymentRepository;
+    private final MenuItemService menuItemService;
     private final CheckoutSessionCreator checkoutSessionCreator;   // ISP: this service sees ONLY this port
     private final PaymentProperties props; // properties for payment service, e.g. reuse window
     private final TransactionTemplate tx; // use it for short transactions, not @Transactional on the whole method to avoid keeping a DB transaction open while waiting for Stripe
@@ -83,6 +85,7 @@ public class PaymentService {
                     order.getStatus());
         }
 
+        menuItemService.assertAvailable(order);        // 409 with a message if something ran out
         // Prepare the checkout lines from the order items and fees
         List<CheckoutLine> lines = prepareLines(order);
 

@@ -52,7 +52,9 @@ public class Payment {
         this.stripePaymentIntentId = paymentIntentId;
         return moveTo(PaymentStatus.SUCCEEDED);
     }
-    public boolean markFailed()   { return moveTo(PaymentStatus.FAILED); }
+    public void markFailed()   {
+        moveTo(PaymentStatus.FAILED);
+    }
     public boolean markRefunded() { return moveTo(PaymentStatus.REFUNDED); }
 
     // Returns false (and changes nothing) for an impossible move.

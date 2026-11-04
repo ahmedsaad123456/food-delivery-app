@@ -47,7 +47,7 @@ public class RestaurantService {
 
         // service.create(request, String ownerEmail)
         User owner = userRepository.findByEmail(ownerEmail).orElseThrow(() -> new ResourceNotFoundException(Constants.USER, ownerEmail));
-        var restaurant = mapper.toEntity(req, category);
+        Restaurant restaurant = mapper.toEntity(req, category);
         restaurant.setOwner(owner);
         Restaurant saved = restaurantRepository.save(restaurant);
         return mapper.toResponse(saved);

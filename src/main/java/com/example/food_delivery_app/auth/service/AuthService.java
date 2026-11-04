@@ -18,6 +18,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -42,7 +43,7 @@ public class AuthService {
         RoleEntity customer = roleRepository.findByName(Role.CUSTOMER)
                 .orElseThrow(() -> new IllegalStateException(Constants.CUSTOMER_ERROR));
 
-        var user = User.builder()
+        User user = User.builder()
                 .fullName(request.getFullName())
                 .email(request.getEmail())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
@@ -62,7 +63,7 @@ public class AuthService {
         // It uses the AuthenticationManager to perform the authentication process.
         // The AuthenticationManager.authenticate() method takes an instance of UsernamePasswordAuthenticationToken, which contains the user's email and password, and attempts to authenticate the user.
         // By using AuthenticationProvider (typically DaoAuthenticationProvider), it checks the provided credentials against the stored user details (e.g., in the database) and verifies if they match.
-        var auth = authenticationManager.authenticate(
+        Authentication auth = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.getEmail(),
                         request.getPassword()));
@@ -86,10 +87,10 @@ public class AuthService {
 
     public AuthResponse getRefreshToken(String refreshToken) {
         // 1. Validate + consume the old token (throws 401 if invalid or reused)
-        var rotated = refreshTokenService.rotate(refreshToken);
+        RotatedRefreshToken rotated = refreshTokenService.rotate(refreshToken);
 
         // 2. Load the user fresh from the DB (the account may have been disabled meanwhile)
-        var user = userRepository.findById(rotated.userId())
+        User user = userRepository.findById(rotated.userId())
                 .filter(User::isEnabled)
                 .orElseThrow(() -> {
                     refreshTokenService.revoke(rotated.newToken());   // don't leave a live token for a dead account

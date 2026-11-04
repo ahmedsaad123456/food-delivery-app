@@ -11,6 +11,7 @@ import com.example.food_delivery_app.exceptions.AppException;
 import com.example.food_delivery_app.exceptions.ResourceNotFoundException;
 import com.example.food_delivery_app.menu.entity.MenuItem;
 import com.example.food_delivery_app.menu.repository.MenuItemRepository;
+import com.example.food_delivery_app.menu.service.MenuItemService;
 import com.example.food_delivery_app.order.dto.OrderResponse;
 import com.example.food_delivery_app.order.dto.OrderSummaryResponse;
 import com.example.food_delivery_app.order.dto.PlaceOrderRequest;
@@ -43,6 +44,7 @@ public class OrderService {
     private final MenuItemRepository menuItemRepository;
     private final OrderRepository orderRepository;
     private final PricingService pricingService;
+    private final MenuItemService menuItemService;
     private final OrderMapper orderMapper;
     private final ApplicationEventPublisher events;
     private static final Set<String> SORTABLE = Set.of("createdAt", "total", "status", "id");
@@ -72,6 +74,7 @@ public class OrderService {
 
         // create and save (the items are saved by cascade)
         Order order = Order.create(userId, restaurantId, lines, price);
+        menuItemService.assertAvailable(order);        // 409 with a message if something ran out
         orderRepository.save(order);
 
         // the cart is cleared AFTER the commit, by CartCleanupListener

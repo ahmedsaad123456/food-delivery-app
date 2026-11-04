@@ -4,6 +4,7 @@ import com.example.food_delivery_app.exceptions.AppException;
 import com.example.food_delivery_app.common.ErrorCode;
 import com.example.food_delivery_app.common.Messages;
 import com.example.food_delivery_app.common.ApiResponse;
+import com.example.food_delivery_app.exceptions.InvalidWebhookSignatureException;
 import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -130,6 +131,13 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(DataAccessResourceFailureException.class)
     public ResponseEntity<ApiResponse<Void>> handleResourceFailure(DataAccessResourceFailureException ex) {
         return build(ErrorCode.SERVICE_UNAVAILABLE);
+    }
+
+
+    // Wrong signature: not Stripe (or wrong secret). 400, and Stripe will not "fix" it by retrying.
+    @ExceptionHandler(InvalidWebhookSignatureException.class)
+    public ResponseEntity<Void> invalidSignature() {
+        return ResponseEntity.badRequest().build();
     }
 
 

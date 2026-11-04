@@ -32,7 +32,6 @@ public class OrderController {
     public ApiResponse<OrderResponse> placeOrder(
             @AuthenticationPrincipal User user,
             @Valid @RequestBody(required = false) PlaceOrderRequest request) {
-
         PlaceOrderRequest body = request != null ? request : new PlaceOrderRequest(null, null);
         OrderResponse order = orderService.placeOrder(user.getId(), body);
         return ApiResponse.ok(order);

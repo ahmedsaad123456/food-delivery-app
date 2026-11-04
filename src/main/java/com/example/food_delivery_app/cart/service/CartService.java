@@ -13,6 +13,7 @@ import com.example.food_delivery_app.exceptions.AppException;
 import com.example.food_delivery_app.exceptions.ResourceNotFoundException;
 import com.example.food_delivery_app.menu.entity.MenuItem;
 import com.example.food_delivery_app.menu.repository.MenuItemRepository;
+import com.example.food_delivery_app.menu.service.MenuItemService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -30,9 +31,11 @@ import java.util.stream.Collectors;
 public class CartService {
     private final CartRepository cartRepository;
     private final MenuItemRepository menuItemRepository;
+    private final MenuItemService menuItemService;
     private final PricingService pricingService;
 
     public void addToCart(Integer userId, Integer menuItemId, int quantity) {
+        menuItemService.isAvailable(menuItemId, quantity); // check if the menu item is available and has enough stock
         MenuItem item = menuItemRepository.findById(menuItemId)
                 .orElseThrow(() -> new ResourceNotFoundException("MenuItem", menuItemId));
         if (!item.isAvailable()) {

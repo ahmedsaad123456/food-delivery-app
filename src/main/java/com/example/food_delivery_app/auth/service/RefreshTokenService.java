@@ -26,7 +26,6 @@ public class RefreshTokenService {
     private final StringRedisTemplate redis;
     private final SecureRandom random = new SecureRandom();
 
-    public record Rotated(int userId, String newToken) {}
 
     // New login = new family. Each device/session has its own family.
     public String createRefreshToken(int userId) {
@@ -53,7 +52,7 @@ public class RefreshTokenService {
     // Rotating a refresh token means that when the client uses a refresh token to get a new access token,
     // the server invalidates the old refresh token and generates a new one.
     // This is done to prevent replay attacks: if an attacker steals a refresh token, it will be useless after it has been used once.
-    public Rotated rotate(String token) {
+    public RotatedRefreshToken rotate(String token) {
         String hash = sha256(token);
 
         // Read AND delete in one atomic step
@@ -73,7 +72,7 @@ public class RefreshTokenService {
         String familyId = parts[1];
 
         redis.opsForValue().set(Constants.USED_KEY + hash, familyId, TTL);    // remember it was consumed
-        return new Rotated(userId, generateToken(userId, familyId));    // same family, new token
+        return new RotatedRefreshToken(userId, generateToken(userId, familyId));    // same family, new token
     }
 
     // Revoke a refresh token and its family.

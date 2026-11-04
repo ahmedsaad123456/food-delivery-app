@@ -1,4 +1,4 @@
-package com.example.food_delivery_app.authorization;
+package com.example.food_delivery_app.order.secuirty;
 
 import com.example.food_delivery_app.order.repository.OrderRepository;
 import com.example.food_delivery_app.users.entity.User;

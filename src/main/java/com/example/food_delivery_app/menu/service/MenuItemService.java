@@ -11,16 +11,19 @@ import com.example.food_delivery_app.menu.dto.UpdateMenuItemRequest;
 import com.example.food_delivery_app.menu.entity.MenuItem;
 import com.example.food_delivery_app.menu.mapper.MenuItemMapper;
 import com.example.food_delivery_app.menu.repository.MenuItemRepository;
+import com.example.food_delivery_app.order.entity.Order;
+import com.example.food_delivery_app.order.entity.OrderItem;
 import com.example.food_delivery_app.restaurant.entity.Restaurant;
 import com.example.food_delivery_app.restaurant.repository.RestaurantRepository;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.security.core.parameters.P;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.LinkedHashMap;
-import java.util.List;
+import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -93,6 +96,65 @@ public class MenuItemService {
     private MenuItem getOrThrow(Integer id) {
         return menuItemRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(Constants.MENU_ITEM, id));
+    }
+
+    // Used BEFORE payment: throws a clear 409 if any item has less stock than the order needs.
+    @Transactional(readOnly = true)
+    public void assertAvailable(Order order) {
+
+        // Get all menu items in the order in one query, and map them by id for easy lookup
+        Map<Integer, MenuItem> current = menuItemRepository
+                .findAllById(order.getItems().stream().map(OrderItem::getMenuItemId).toList())
+                .stream()
+                .collect(Collectors.toMap(MenuItem::getId, Function.identity()));
+
+        // Check each item in the order against the current stock
+        for (OrderItem item : order.getItems()) {
+            MenuItem menuItem = current.get(item.getMenuItemId());
+            boolean missing = menuItem == null;
+            // stock == null means unlimited
+            boolean notEnough = menuItem != null && menuItem.getStock() != null
+                    && menuItem.getStock() < item.getQuantity();
+            if (missing || notEnough) {
+                throw new AppException(ErrorCode.INSUFFICIENT_STOCK, item.getName());
+            }
+        }
+
+
+    }
+
+    // Used AFTER payment, inside the webhook transaction.
+    // All-or-nothing for ONE order: returns false (and leaves the stock exactly as it was) if any item is short.
+    @Transactional
+    public boolean tryDeduct(Order order) {
+        List<OrderItem> items = order.getItems().stream()
+                .sorted(Comparator.comparing(OrderItem::getMenuItemId))
+                .toList();
+
+        List<OrderItem> deducted = new ArrayList<>();
+        for (OrderItem item : items) {
+            if (menuItemRepository.deductStock(item.getMenuItemId(), item.getQuantity()) == 1) {
+                deducted.add(item);
+            } else {
+                // This item is short: put back what we already took from the previous ones
+                deducted.forEach(d -> menuItemRepository.addStock(d.getMenuItemId(), d.getQuantity()));
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // check if the menu item is available for order (stock > 0 or stock is null)
+    @Transactional(readOnly = true)
+    public void isAvailable(Integer menuItemId , Integer quantity) {
+        MenuItem menuItem = menuItemRepository.findById(menuItemId)
+                .orElseThrow(() -> new ResourceNotFoundException(Constants.MENU_ITEM, menuItemId));
+        if (menuItem.getStock() != null && menuItem.getStock() < quantity) {
+            throw new AppException(
+                    ErrorCode.INSUFFICIENT_STOCK,
+                    menuItem.getName()
+            );
+        }
     }
 
 

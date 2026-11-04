@@ -1,4 +1,9 @@
-### Stripe Payment Integration
-- Create a Stripe account in test mode and store the secret key in an environment variable (never hardcode it).
-- Apply ISP + Adapter Pattern by creating three separate interfaces: CheckoutSessionCreator, PaymentRefund, and WebhookSignatureVerifier. Implement them in StripePaymentGateway to keep the domain independent of Stripe.
-- Implement CreateCheckoutSessionCommand to create a checkout session from the Order using the order items' snapshots, include orderId in the session metadata, return the checkoutUrl, and use an Idempotency Key.
+### Implement Webhooks, and Inventory Management
+
+- Integrate Stripe Checkout and Refunds using Adapter and ISP patterns.
+- Add idempotent checkout sessions and payment attempt tracking.
+- Implement payment state transitions and secure Stripe webhook signature verification.
+- Handle webhook events with dedicated handlers and duplicate-event protection.
+- Support out-of-order events, automatic refunds, and partial refunds.
+- Add inventory stock validation and atomic stock deduction.
+- Handle insufficient stock and double payments with automatic refunds.

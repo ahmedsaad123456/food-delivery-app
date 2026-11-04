@@ -1,28 +1,29 @@
 package com.example.food_delivery_app.payment.stripe;
 
 import com.example.food_delivery_app.common.Constants;
+import com.example.food_delivery_app.exceptions.InvalidWebhookSignatureException;
 import com.example.food_delivery_app.exceptions.PaymentGatewayException;
-import com.example.food_delivery_app.payment.gateway.CheckoutRequest;
-import com.example.food_delivery_app.payment.gateway.CheckoutLine;
-import com.example.food_delivery_app.payment.gateway.CheckoutSession;
-import com.example.food_delivery_app.payment.gateway.CheckoutSessionCreator;
-import com.example.food_delivery_app.payment.gateway.PaymentRefund;
+import com.example.food_delivery_app.payment.gateway.*;
 import com.example.food_delivery_app.payment.properties.StripeProperties;
+import com.stripe.exception.EventDataObjectDeserializationException;
+import com.stripe.exception.SignatureVerificationException;
 import com.stripe.exception.StripeException;
-import com.stripe.model.Coupon;
-import com.stripe.model.Refund;
+import com.stripe.model.*;
 import com.stripe.model.checkout.Session;
 import com.stripe.net.RequestOptions;
+import com.stripe.net.Webhook;
 import com.stripe.param.CouponCreateParams;
 import com.stripe.param.RefundCreateParams;
 import com.stripe.param.checkout.SessionCreateParams;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Currency;
+import java.util.Map;
 
 
 // The only class that knows about Stripe's SDK.
@@ -33,8 +34,9 @@ import java.util.Currency;
 // It encapsulates the Stripe-specific logic and provides a clean interface for the rest of the application to interact with the payment gateway.
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class StripePaymentGateway
-        implements CheckoutSessionCreator, PaymentRefund {
+        implements CheckoutSessionCreator, PaymentRefund, WebhookSignatureVerifier {
 
     private final StripeProperties props;
 
@@ -116,6 +118,87 @@ public class StripePaymentGateway
 
         // We use movePointRight to shift the decimal point to the right by the number of fraction digits, and then convert to long.
         return amount.movePointRight(digits).longValueExact();
+    }
+
+    // ---------- Port 3: verify webhook signature ----------
+    @Override
+    public PaymentEvent verify(String payload, String signatureHeader) {
+        // The webhook secret is used to verify the signature of the webhook event.
+        // It is configured in the application properties and should not be null or blank.
+        if (props.webhookSecret() == null || props.webhookSecret().isBlank()) {
+            throw new IllegalStateException("stripe.webhook-secret is not configured");
+        }
+        Event event;
+        try {
+            // checks HMAC + the 5-minute timestamp tolerance
+            // The signatureHeader is the value of the "Stripe-Signature" header from the webhook request.
+            event = Webhook.constructEvent(payload, signatureHeader, props.webhookSecret());
+        } catch (SignatureVerificationException e) {
+            // The signature verification failed, which means the webhook request may not be from Stripe or has been tampered with.
+            log.warn("Webhook signature verification failed: {}", e.getMessage());
+            throw new InvalidWebhookSignatureException();
+        }
+
+        // The event type is used to determine what kind of payment event it is, and we extract the relevant data from the event object.
+        return switch (event.getType()) {
+            case "checkout.session.completed"    -> fromSession(event);
+            case "payment_intent.payment_failed" -> fromPaymentIntent(event);
+            case "charge.refunded"               -> fromCharge(event);
+            default -> new PaymentEvent(event.getId(), PaymentEventType.UNKNOWN, null, null, null);
+        };
+    }
+
+    // from session, we can get the payment intent and the order id from the metadata.
+    // The payment intent is used to identify the payment in Stripe, and the order id is used to identify the order in our system.
+    private PaymentEvent fromSession(Event event) {
+        // The data object of the event is a Session object, which contains the payment status, payment intent, and metadata.
+        Session s = (Session) dataObject(event);
+        // "paid" for cards. Delayed methods (bank debit) complete the session first and pay later.
+        PaymentEventType type = "paid".equals(s.getPaymentStatus())
+                ? PaymentEventType.CHECKOUT_COMPLETED : PaymentEventType.UNKNOWN;
+        return new PaymentEvent(event.getId(), type, s.getId(), s.getPaymentIntent(), orderId(s.getMetadata()));
+    }
+
+    // from payment intent, we can get the order id from the metadata.
+    // The payment intent is used to identify the payment in Stripe, and the order id is used to identify the order in our system.
+    private PaymentEvent fromPaymentIntent(Event event) {
+        PaymentIntent pi = (PaymentIntent) dataObject(event);
+        return new PaymentEvent(event.getId(), PaymentEventType.PAYMENT_FAILED, null, pi.getId(), orderId(pi.getMetadata()));
+    }
+
+    // from charge, we can get the payment intent and the order id from the metadata.
+    private PaymentEvent fromCharge(Event event) {
+        Charge c = (Charge) dataObject(event);
+        // charge.refunded also fires for PARTIAL refunds. We only handle full refunds for now.
+        PaymentEventType type = Boolean.TRUE.equals(c.getRefunded())
+                ? PaymentEventType.REFUNDED : PaymentEventType.UNKNOWN;
+        return new PaymentEvent(event.getId(), type, null, c.getPaymentIntent(), orderId(c.getMetadata()));
+    }
+
+    // The data object of the event is deserialized from the event's data object deserializer.
+    private StripeObject dataObject(Event event) {
+        EventDataObjectDeserializer d = event.getDataObjectDeserializer();
+        // getObject() is present ONLY when the event's API version equals the SDK's API version.
+        return d.getObject().orElseGet(() -> deserializeLeniently(d));
+    }
+
+    // If the event's API version is different from the SDK's API version,
+    // we need to deserialize the data object leniently, which may lose some fields.
+    private StripeObject deserializeLeniently(EventDataObjectDeserializer d) {
+        try {
+            return d.deserializeUnsafe();
+        } catch (EventDataObjectDeserializationException e) {
+            throw new PaymentGatewayException(e);
+        }
+    }
+
+    private static Integer orderId(Map<String, String> metadata) {
+        String value = metadata == null ? null : metadata.get(Constants.ORDER_ID);
+        try {
+            return value == null ? null : Integer.valueOf(value);
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
 }
