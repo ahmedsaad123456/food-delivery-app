@@ -1,11 +1,11 @@
-package com.example.food_delivery_app.menu.controller;
+package com.example.food_delivery_app.restaurant.controller;
 
 import com.example.food_delivery_app.common.ApiResponse;
-import com.example.food_delivery_app.menu.dto.CreateMenuItemRequest;
-import com.example.food_delivery_app.menu.dto.MenuItemResponse;
-import com.example.food_delivery_app.menu.dto.MenuSectionResponse;
-import com.example.food_delivery_app.menu.dto.UpdateMenuItemRequest;
-import com.example.food_delivery_app.menu.service.MenuItemService;
+import com.example.food_delivery_app.restaurant.dto.menu_item.CreateMenuItemRequest;
+import com.example.food_delivery_app.restaurant.dto.menu_item.MenuItemResponse;
+import com.example.food_delivery_app.restaurant.dto.menu_item.MenuSectionResponse;
+import com.example.food_delivery_app.restaurant.dto.menu_item.UpdateMenuItemRequest;
+import com.example.food_delivery_app.restaurant.service.MenuItemService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

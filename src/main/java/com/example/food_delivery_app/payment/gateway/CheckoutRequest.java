@@ -1,6 +1,5 @@
 package com.example.food_delivery_app.payment.gateway;
 
-import com.example.food_delivery_app.payment.gateway.CheckoutLine;
 
 import java.math.BigDecimal;
 import java.util.List;

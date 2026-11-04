@@ -17,7 +17,7 @@ public class RefundedHandler implements WebhookHandler {
     @Override public PaymentEventType type() { return PaymentEventType.REFUNDED; }
 
     @Override
-    public void handle(PaymentEvent event) {
+    public void handleEvent(PaymentEvent event) {
         payments.findByStripePaymentIntentId(event.paymentReference())
                 .ifPresentOrElse(p -> {
                     // The payment is already refunded in our DB, or it is not refundable (e.g. PENDING). In both cases we ignore the event.

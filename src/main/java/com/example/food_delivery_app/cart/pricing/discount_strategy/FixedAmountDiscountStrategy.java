@@ -14,9 +14,9 @@ public class FixedAmountDiscountStrategy implements DiscountStrategy {
     }
 
     @Override
-    public Money calculate(Money subtotal, Money deliveryFee, BigDecimal amount) {
+    public Money calculateDiscount(Money subtotal, Money deliveryFee, BigDecimal amount) {
         Money fixed = Money.of(amount, subtotal.currency());
         // return the smallest of the fixed discount and the total (subtotal + deliveryFee) to ensure we don't exceed the total cost
-        return DiscountStrategy.capped(fixed, subtotal, deliveryFee);
+        return DiscountStrategy.capDiscount(fixed, subtotal, deliveryFee);
     }
 }

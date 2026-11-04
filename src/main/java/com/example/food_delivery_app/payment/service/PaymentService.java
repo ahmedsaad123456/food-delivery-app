@@ -4,7 +4,7 @@ import com.example.food_delivery_app.common.Constants;
 import com.example.food_delivery_app.common.ErrorCode;
 import com.example.food_delivery_app.exceptions.AppException;
 import com.example.food_delivery_app.exceptions.ResourceNotFoundException;
-import com.example.food_delivery_app.menu.service.MenuItemService;
+import com.example.food_delivery_app.restaurant.service.MenuItemService;
 import com.example.food_delivery_app.order.entity.Order;
 import com.example.food_delivery_app.order.entity.OrderItem;
 import com.example.food_delivery_app.order.entity.OrderStatus;
@@ -43,11 +43,11 @@ public class PaymentService {
     // Deliberately NOT @Transactional: no DB transaction may stay open while we wait for Stripe.
     // We use a short read transaction to load the order and prepare the request, then call Stripe, then a short write transaction to save the payment attempt.
 
-    public CheckoutResponse createCheckout(Integer orderId) {
+    public CheckoutResponse createPaymentCheckout(Integer orderId) {
 
         // 1) Short read transaction: load the order, build the request from its snapshot
         // we use a short transaction here to get order items as it is lazy loaded, and to ensure we see a consistent snapshot of the order (no concurrent updates)
-        PreparedCheckout prepared = tx.execute(status -> prepare(orderId));
+        PreparedCheckout prepared = tx.execute(status -> prepareOrder(orderId));
 
         // 2) Same page again if the previous attempt is still open (double click, page refresh)
         Instant cutoff = Instant.now().minus(props.reuseWindow()); // reuse window: if the last attempt is younger than this, we can reuse it
@@ -63,15 +63,15 @@ public class PaymentService {
 
 
         // 3) The Stripe call, outside any transaction
-        CheckoutSession session = checkoutSessionCreator.create(prepared.request());
+        CheckoutSession session = checkoutSessionCreator.createSession(prepared.request());
 
         // 4) Short write transaction (the repository's own)
-        return save(prepared, session);
+        return savePayment(prepared, session);
     }
 
 
     // Prepare the checkout request from the order snapshot, and validate that the order is still payable.
-    private PreparedCheckout prepare(Integer orderId) {
+    private PreparedCheckout prepareOrder(Integer orderId) {
         // Load the order from the database, or throw an exception if not found
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException(
@@ -85,9 +85,9 @@ public class PaymentService {
                     order.getStatus());
         }
 
-        menuItemService.assertAvailable(order);        // 409 with a message if something ran out
+        menuItemService.assertItemsAvailableFromOrder(order);        // 409 with a message if something ran out
         // Prepare the checkout lines from the order items and fees
-        List<CheckoutLine> lines = prepareLines(order);
+        List<CheckoutLine> lines = prepareOrderLines(order);
 
         // Count the number of previous payment attempts for this order, and create an idempotency key for this attempt
         long attempt = paymentRepository.countByOrderId(orderId) + 1;
@@ -113,7 +113,7 @@ public class PaymentService {
 
 
     // Prepare the checkout lines from the order items and fees. Each item becomes a line, and if there are any fees (delivery, taxes), they become a separate line.
-    private List<CheckoutLine> prepareLines(Order order) {
+    private List<CheckoutLine> prepareOrderLines(Order order) {
         List<CheckoutLine> lines = new ArrayList<>();
         BigDecimal itemsTotal = BigDecimal.ZERO;
 
@@ -160,7 +160,7 @@ public class PaymentService {
     // If another concurrent request already saved a payment with the same idempotency key, return that one instead of throwing an error.
     // No transaction here because the repository's own transaction is enough
     // As we want to call another query in case of a DataIntegrityViolationException (unique constraint violation).
-    private CheckoutResponse save(PreparedCheckout prepared, CheckoutSession session) {
+    private CheckoutResponse savePayment(PreparedCheckout prepared, CheckoutSession session) {
         try {
             Payment payment = paymentRepository.save(
                     Payment.pending(prepared.request().orderId(), prepared.total(), props.currency().toUpperCase(), session));

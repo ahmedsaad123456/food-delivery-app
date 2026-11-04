@@ -14,9 +14,9 @@ public class PercentageDiscountStrategy implements DiscountStrategy {
     }
 
     @Override
-    public Money calculate(Money subtotal, Money deliveryFee, BigDecimal percent) {
+    public Money calculateDiscount(Money subtotal, Money deliveryFee, BigDecimal percent) {
         BigDecimal factor = percent.movePointLeft(2);              // 10 -> 0.10
         // percent > 100 is still "valid input", so we cap instead of throwing (LSP)
-        return DiscountStrategy.capped(subtotal.multiply(factor), subtotal, deliveryFee);
+        return DiscountStrategy.capDiscount(subtotal.multiply(factor), subtotal, deliveryFee);
     }
 }

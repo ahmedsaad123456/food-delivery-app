@@ -32,6 +32,6 @@ public class DiscountService {
     }
 
     public Money discountFor(DiscountType type, Money subtotal, Money deliveryFee, BigDecimal value) {
-        return strategies.get(type).calculate(subtotal, deliveryFee, value);
+        return strategies.get(type).calculateDiscount(subtotal, deliveryFee, value);
     }
 }

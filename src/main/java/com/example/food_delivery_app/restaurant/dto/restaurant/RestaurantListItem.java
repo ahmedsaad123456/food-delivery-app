@@ -1,4 +1,4 @@
-package com.example.food_delivery_app.restaurant.dto;
+package com.example.food_delivery_app.restaurant.dto.restaurant;
 
 public record RestaurantListItem(Integer id, String name, String address, boolean open,
                                  Integer categoryId, String categoryName) {

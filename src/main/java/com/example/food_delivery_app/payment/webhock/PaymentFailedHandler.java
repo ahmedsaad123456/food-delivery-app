@@ -21,7 +21,7 @@ public class PaymentFailedHandler implements WebhookHandler {
     @Override public PaymentEventType type() { return PaymentEventType.PAYMENT_FAILED; }
 
     @Override
-    public void handle(PaymentEvent event) {
+    public void handleEvent(PaymentEvent event) {
         if (event.orderId() == null) {
             log.warn("payment_failed without orderId metadata: ignored");
             return;

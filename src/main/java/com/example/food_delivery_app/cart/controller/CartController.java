@@ -31,10 +31,10 @@ public class CartController {
     }
 
     @GetMapping("/summary")
-    public ApiResponse<PriceSummary> summary(@AuthenticationPrincipal User user,
-                                             @RequestParam(required = false) DiscountType discountType,
-                                             @RequestParam(required = false) BigDecimal discountValue) {
-        return ApiResponse.ok(cartService.summary(user.getId(), discountType, discountValue));
+    public ApiResponse<PriceSummary> getCartPriceSummary(@AuthenticationPrincipal User user,
+                                                         @RequestParam(required = false) DiscountType discountType,
+                                                         @RequestParam(required = false) BigDecimal discountValue) {
+        return ApiResponse.ok(cartService.getCartPriceSummary(user.getId(), discountType, discountValue));
     }
 
     @PostMapping("/items")
@@ -47,26 +47,23 @@ public class CartController {
 
     @PutMapping("/items/{menuItemId}")
     @ResponseStatus(code = HttpStatus.NO_CONTENT)
-
-    public Void update(@AuthenticationPrincipal User user,
-                                       @PathVariable Integer menuItemId,
-                                       @Valid @RequestBody UpdateQuantityRequest request) {
+    public Void updateCart(@AuthenticationPrincipal User user,
+                           @PathVariable Integer menuItemId,
+                           @Valid @RequestBody UpdateQuantityRequest request) {
         cartService.updateQuantity(user.getId(), menuItemId, request.quantity());
         return null;
     }
 
     @DeleteMapping("/items/{menuItemId}")
     @ResponseStatus(code = HttpStatus.NO_CONTENT)
-
-    public Void remove(@AuthenticationPrincipal User user, @PathVariable Integer menuItemId) {
+    public Void removeItemFromCart(@AuthenticationPrincipal User user, @PathVariable Integer menuItemId) {
         cartService.removeFromCart(user.getId(), menuItemId);
         return null;
     }
 
     @DeleteMapping
     @ResponseStatus(code = HttpStatus.NO_CONTENT)
-
-    public Void clear(@AuthenticationPrincipal User user) {
+    public Void clearCart(@AuthenticationPrincipal User user) {
         cartService.clearCart(user.getId());
         return null;
     }

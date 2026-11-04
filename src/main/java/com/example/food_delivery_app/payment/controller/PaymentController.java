@@ -22,7 +22,7 @@ public class PaymentController {
     // The orderId is passed as a path variable, and the method returns a CheckoutResponse wrapped in an ApiResponse.
     @PostMapping("/orders/{orderId}/checkout")
     @PreAuthorize("hasAuthority('ORDER_CREATE') and @orderSecurity.isCustomerOf(#orderId, authentication)")
-    public ApiResponse<CheckoutResponse> checkout(@PathVariable Integer orderId) {
-        return ApiResponse.ok( paymentService.createCheckout(orderId));
+    public ApiResponse<CheckoutResponse> paymentCheckout(@PathVariable Integer orderId) {
+        return ApiResponse.ok( paymentService.createPaymentCheckout(orderId));
     }
 }

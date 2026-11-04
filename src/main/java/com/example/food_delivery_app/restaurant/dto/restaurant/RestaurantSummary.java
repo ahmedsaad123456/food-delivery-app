@@ -1,4 +1,4 @@
-package com.example.food_delivery_app.restaurant.dto;
+package com.example.food_delivery_app.restaurant.dto.restaurant;
 
 public interface RestaurantSummary {
     Integer getId();

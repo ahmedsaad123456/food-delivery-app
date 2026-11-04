@@ -14,7 +14,7 @@ import java.math.BigDecimal;
 @Mapper(componentModel = "spring")
 public interface OrderMapper {
 
-    OrderResponse toResponse(Order order);
+    OrderResponse toOrderResponse(Order order);
 
     @Mapping(target = "lineTotal", expression = "java(item.lineTotal())")
     OrderItemResponse toItemResponse(OrderItem item);
@@ -24,5 +24,5 @@ public interface OrderMapper {
         return Money.egpMoney(amount);
     }
 
-    OrderSummaryResponse toSummary(Order order);
+    OrderSummaryResponse toOrderSummary(Order order);
 }

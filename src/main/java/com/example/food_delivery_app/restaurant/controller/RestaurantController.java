@@ -1,21 +1,20 @@
 package com.example.food_delivery_app.restaurant.controller;
 
 import com.example.food_delivery_app.common.ApiResponse;
-import com.example.food_delivery_app.restaurant.dto.CreateRestaurantRequest;
-import com.example.food_delivery_app.restaurant.dto.RestaurantListItem;
-import com.example.food_delivery_app.restaurant.dto.RestaurantResponse;
+import com.example.food_delivery_app.common.PageQuery;
+import com.example.food_delivery_app.restaurant.dto.restaurant.CreateRestaurantRequest;
+import com.example.food_delivery_app.restaurant.dto.restaurant.RestaurantListItem;
+import com.example.food_delivery_app.restaurant.dto.restaurant.RestaurantResponse;
 import com.example.food_delivery_app.restaurant.service.RestaurantService;
 import com.example.food_delivery_app.restaurant.specification.RestaurantSearchCriteria;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
 import com.example.food_delivery_app.common.PageResponse;
 
 @RestController
@@ -60,9 +59,10 @@ public class RestaurantController {
 
 
     @GetMapping("/search")
-    public ApiResponse<PageResponse<RestaurantListItem>> search(
-            @ParameterObject RestaurantSearchCriteria criteria, @ParameterObject Pageable pageable) {
-        return ApiResponse.ok(service.search(criteria, pageable));
+    public ApiResponse<PageResponse<RestaurantListItem>> searchForRestaurants(
+            @ParameterObject RestaurantSearchCriteria criteria,
+            @Valid @ParameterObject PageQuery pageQuery) {
+        return ApiResponse.ok(service.searchForRestaurants(criteria, pageQuery));
     }
 
 }

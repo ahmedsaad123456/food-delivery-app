@@ -11,7 +11,7 @@ public class NotificationManager implements EmailSender {
     }
 
     @Override
-    public SendResult send(NotificationMessage message) {
-        return new SendResult(channel(), 3, message.body());
+    public void send(NotificationMessage message) {
+        new SendResult(channel(), 3, message.body());
     }
 }

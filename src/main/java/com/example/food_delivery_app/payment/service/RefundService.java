@@ -21,7 +21,7 @@ public class RefundService {
         }
         // ONE key per payment: if this runs twice (a retry), Stripe returns the SAME refund and never a second one
         String idempotencyKey = "refund-payment-" + payment.getId();
-        refund.refund(payment.getStripePaymentIntentId(), payment.getAmount(),
+        refund.refundPayment(payment.getStripePaymentIntentId(), payment.getAmount(),
                 payment.getCurrency(), idempotencyKey);
         log.warn("Refund requested for payment {} (order {}): {}", payment.getId(), payment.getOrderId(), reason);
     }

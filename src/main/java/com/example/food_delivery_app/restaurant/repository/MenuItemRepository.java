@@ -1,6 +1,6 @@
-package com.example.food_delivery_app.menu.repository;
+package com.example.food_delivery_app.restaurant.repository;
 
-import com.example.food_delivery_app.menu.entity.MenuItem;
+import com.example.food_delivery_app.restaurant.entity.MenuItem;
 import io.lettuce.core.dynamic.annotation.Param;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;

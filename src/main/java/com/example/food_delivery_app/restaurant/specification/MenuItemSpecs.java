@@ -1,7 +1,7 @@
-package com.example.food_delivery_app.menu.specification;
+package com.example.food_delivery_app.restaurant.specification;
 
 import com.example.food_delivery_app.common.Constants;
-import com.example.food_delivery_app.menu.entity.MenuItem;
+import com.example.food_delivery_app.restaurant.entity.MenuItem;
 import org.springframework.data.jpa.domain.Specification;
 
 

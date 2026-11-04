@@ -1,9 +1,9 @@
-### Implement Webhooks, and Inventory Management
+### Make the code more clean
 
-- Integrate Stripe Checkout and Refunds using Adapter and ISP patterns.
-- Add idempotent checkout sessions and payment attempt tracking.
-- Implement payment state transitions and secure Stripe webhook signature verification.
-- Handle webhook events with dedicated handlers and duplicate-event protection.
-- Support out-of-order events, automatic refunds, and partial refunds.
-- Add inventory stock validation and atomic stock deduction.
-- Handle insufficient stock and double payments with automatic refunds.
+- Authorization -> move them to the restaurant and order features inside permissions folder
+- Remove all unused imports
+- Change var to data types
+- Change names of mappers, services and others to be more clear ( getOrThrow for example )
+- Remove pageable object from the controller, and pass page number, size and pass it to the service and the service make the pageable and pass to repo
+- Move menu in the restaurant feature
+- The annotation should be above the methods directly

@@ -1,6 +1,7 @@
 package com.example.food_delivery_app.order.controller;
 
 import com.example.food_delivery_app.common.ApiResponse;
+import com.example.food_delivery_app.common.PageQuery;
 import com.example.food_delivery_app.common.PageResponse;
 import com.example.food_delivery_app.order.dto.OrderResponse;
 import com.example.food_delivery_app.order.dto.OrderSummaryResponse;
@@ -39,54 +40,54 @@ public class OrderController {
 
     // ---------- reads ----------
 
-    @GetMapping("/orders/me")
+    @GetMapping("/me")
     @PreAuthorize("hasAuthority('ORDER_VIEW_OWN')")
     public ApiResponse<PageResponse<OrderSummaryResponse>> getMyOrders(
             @AuthenticationPrincipal User user,
-            @RequestParam(required = false) OrderStatus status,
-            @ParameterObject @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        return ApiResponse.ok(orderService.getMyOrders(user.getId(), status, pageable));
+            @RequestParam(required = false) OrderStatus status,@Valid @ParameterObject PageQuery pageQuery
+            ) {
+        return ApiResponse.ok(orderService.getMyOrders(user.getId(), status, pageQuery));
     }
 
-    @GetMapping("/orders/{id}")
+    @GetMapping("/{id}")
     @PreAuthorize("@orderSecurity.canView(#id, authentication)")
     public ApiResponse<OrderResponse> getOrder(@PathVariable Integer id) {
         return ApiResponse.ok(orderService.getOrder(id));
     }
 
-    @GetMapping("/restaurants/{restaurantId}/orders")
+    @GetMapping("/restaurants/{restaurantId}")
     @PreAuthorize("hasRole('ADMIN') or (hasAuthority('ORDER_VIEW_ALL') "
             + "and @restaurantSecurity.isOwner(#restaurantId, authentication))")
     public ApiResponse<PageResponse<OrderSummaryResponse>> restaurantOrders(
             @PathVariable Integer restaurantId,
             @RequestParam(required = false) OrderStatus status,
-            @ParameterObject @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        return ApiResponse.ok(orderService.getRestaurantOrders(restaurantId, status, pageable));
+            @Valid @ParameterObject PageQuery pageQuery) {
+        return ApiResponse.ok(orderService.getRestaurantOrders(restaurantId, status, pageQuery));
     }
 
     // ---------- state changes ----------
 
-    @PatchMapping("/orders/{id}/cancel")
+    @PatchMapping("/{id}/cancel")
     @PreAuthorize("hasAuthority('ORDER_CANCEL') and @orderSecurity.isCustomerOf(#id, authentication)")
     public ApiResponse<OrderResponse> cancelOrder(@PathVariable Integer id) {
-        return ApiResponse.ok(orderService.cancel(id));
+        return ApiResponse.ok(orderService.cancelOrder(id));
     }
 
-    @PatchMapping("/orders/{id}/start-preparing")
+    @PatchMapping("/{id}/start-preparing")
     @PreAuthorize("hasAuthority('ORDER_UPDATE_STATUS') and @orderSecurity.isRestaurantOwnerOf(#id, authentication)")
-    public ApiResponse<OrderResponse> startPreparing(@PathVariable Integer id) {
-        return ApiResponse.ok(orderService.startPreparing(id));
+    public ApiResponse<OrderResponse> startOrderPreparing(@PathVariable Integer id) {
+        return ApiResponse.ok(orderService.startOrderPreparing(id));
     }
 
-    @PatchMapping("/orders/{id}/out-for-delivery")
+    @PatchMapping("/{id}/out-for-delivery")
     @PreAuthorize("hasAuthority('ORDER_UPDATE_STATUS') and @orderSecurity.isRestaurantOwnerOf(#id, authentication)")
-    public ApiResponse<OrderResponse> outForDelivery(@PathVariable Integer id) {
-        return ApiResponse.ok(orderService.markOutForDelivery(id));
+    public ApiResponse<OrderResponse> orderOutForDelivery(@PathVariable Integer id) {
+        return ApiResponse.ok(orderService.markOrderOutForDelivery(id));
     }
 
-    @PatchMapping("/orders/{id}/delivered")
+    @PatchMapping("/{id}/delivered")
     @PreAuthorize("hasAuthority('DELIVERY_UPDATE')")        // day 14: only the driver assigned to this order
-    public ApiResponse<OrderResponse> delivered(@PathVariable Integer id) {
-        return ApiResponse.ok(orderService.markDelivered(id));
+    public ApiResponse<OrderResponse> orderDelivered(@PathVariable Integer id) {
+        return ApiResponse.ok(orderService.markOrderDelivered(id));
     }
 }

@@ -1,23 +1,22 @@
-package com.example.food_delivery_app.menu.service;
+package com.example.food_delivery_app.restaurant.service;
 
 import com.example.food_delivery_app.common.Constants;
 import com.example.food_delivery_app.common.ErrorCode;
 import com.example.food_delivery_app.exceptions.AppException;
 import com.example.food_delivery_app.exceptions.ResourceNotFoundException;
-import com.example.food_delivery_app.menu.dto.CreateMenuItemRequest;
-import com.example.food_delivery_app.menu.dto.MenuItemResponse;
-import com.example.food_delivery_app.menu.dto.MenuSectionResponse;
-import com.example.food_delivery_app.menu.dto.UpdateMenuItemRequest;
-import com.example.food_delivery_app.menu.entity.MenuItem;
-import com.example.food_delivery_app.menu.mapper.MenuItemMapper;
-import com.example.food_delivery_app.menu.repository.MenuItemRepository;
+import com.example.food_delivery_app.restaurant.dto.menu_item.CreateMenuItemRequest;
+import com.example.food_delivery_app.restaurant.dto.menu_item.MenuItemResponse;
+import com.example.food_delivery_app.restaurant.dto.menu_item.MenuSectionResponse;
+import com.example.food_delivery_app.restaurant.dto.menu_item.UpdateMenuItemRequest;
+import com.example.food_delivery_app.restaurant.entity.MenuItem;
+import com.example.food_delivery_app.restaurant.mapper.MenuItemMapper;
+import com.example.food_delivery_app.restaurant.repository.MenuItemRepository;
 import com.example.food_delivery_app.order.entity.Order;
 import com.example.food_delivery_app.order.entity.OrderItem;
 import com.example.food_delivery_app.restaurant.entity.Restaurant;
 import com.example.food_delivery_app.restaurant.repository.RestaurantRepository;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.security.core.parameters.P;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -42,12 +41,12 @@ public class MenuItemService {
         if (!restaurantRepository.existsById(restaurantId)) {
             throw new ResourceNotFoundException(Constants.RESTAURANT, restaurantId);
         }
-        return menuItemRepository.findByRestaurantId(restaurantId).stream().map(mapper::toResponse).toList();
+        return menuItemRepository.findByRestaurantId(restaurantId).stream().map(mapper::toMenuItemResponse).toList();
     }
 
     @Transactional(readOnly = true)
     public MenuItemResponse findMenuItemById(Integer id) {
-        return mapper.toResponse(getOrThrow(id));
+        return mapper.toMenuItemResponse(getMenuItemOrThrow(id));
     }
 
 
@@ -57,17 +56,17 @@ public class MenuItemService {
     public MenuItemResponse createMenuItem(Integer restaurantId, CreateMenuItemRequest request) {
         Restaurant restaurant = restaurantRepository.findById(restaurantId)
                 .orElseThrow(() -> new ResourceNotFoundException(Constants.RESTAURANT, restaurantId));
-        MenuItem item = mapper.toEntity(request);
+        MenuItem item = mapper.toMenuItemEntity(request);
         item.setRestaurant(restaurant);
-        return mapper.toResponse(menuItemRepository.save(item));
+        return mapper.toMenuItemResponse(menuItemRepository.save(item));
     }
 
     @CacheEvict(cacheNames = Constants.MENU_CACHE, allEntries = true)
     @Transactional
     public MenuItemResponse updateMenuItem(Integer id, UpdateMenuItemRequest request) {
-        MenuItem item = getOrThrow(id);
-        mapper.update(request, item);                     // no save() needed (dirty checking)
-        return mapper.toResponse(item);
+        MenuItem item = getMenuItemOrThrow(id);
+        mapper.updateMenuItem(request, item);                     // no save() needed (dirty checking)
+        return mapper.toMenuItemResponse(item);
     }
 
     @CacheEvict(cacheNames = Constants.MENU_CACHE, allEntries = true)
@@ -85,7 +84,7 @@ public class MenuItemService {
             throw new AppException(ErrorCode.RESOURCE_NOT_FOUND, Constants.RESTAURANT, restaurantId);
         }
         return menuItemRepository.findByRestaurantIdOrderBySectionAscNameAsc(restaurantId).stream()
-                .map(mapper::toResponse) // map MenuItem to MenuItemResponse
+                .map(mapper::toMenuItemResponse) // map MenuItem to MenuItemResponse
                 .collect(Collectors.groupingBy(
                         MenuItemResponse::section, LinkedHashMap::new, Collectors.toList())) // group by section while preserving order
                 .entrySet().stream() // convert the map to a stream of entries
@@ -93,14 +92,14 @@ public class MenuItemService {
                 .toList();
     }
 
-    private MenuItem getOrThrow(Integer id) {
+    private MenuItem getMenuItemOrThrow(Integer id) {
         return menuItemRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(Constants.MENU_ITEM, id));
     }
 
     // Used BEFORE payment: throws a clear 409 if any item has less stock than the order needs.
     @Transactional(readOnly = true)
-    public void assertAvailable(Order order) {
+    public void assertItemsAvailableFromOrder(Order order) {
 
         // Get all menu items in the order in one query, and map them by id for easy lookup
         Map<Integer, MenuItem> current = menuItemRepository
@@ -126,7 +125,7 @@ public class MenuItemService {
     // Used AFTER payment, inside the webhook transaction.
     // All-or-nothing for ONE order: returns false (and leaves the stock exactly as it was) if any item is short.
     @Transactional
-    public boolean tryDeduct(Order order) {
+    public boolean tryDeductItemsFromStock(Order order) {
         List<OrderItem> items = order.getItems().stream()
                 .sorted(Comparator.comparing(OrderItem::getMenuItemId))
                 .toList();
@@ -146,7 +145,7 @@ public class MenuItemService {
 
     // check if the menu item is available for order (stock > 0 or stock is null)
     @Transactional(readOnly = true)
-    public void isAvailable(Integer menuItemId , Integer quantity) {
+    public void assertAvailableMenuItem(Integer menuItemId , Integer quantity) {
         MenuItem menuItem = menuItemRepository.findById(menuItemId)
                 .orElseThrow(() -> new ResourceNotFoundException(Constants.MENU_ITEM, menuItemId));
         if (menuItem.getStock() != null && menuItem.getStock() < quantity) {

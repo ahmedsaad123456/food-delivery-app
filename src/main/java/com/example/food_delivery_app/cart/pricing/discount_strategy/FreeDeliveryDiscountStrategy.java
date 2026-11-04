@@ -15,7 +15,7 @@ public class FreeDeliveryDiscountStrategy implements DiscountStrategy {
 
     // "value" is ignored: the discount is the delivery fee itself (always <= subtotal + deliveryFee).
     @Override
-    public Money calculate(Money subtotal, Money deliveryFee, BigDecimal value) {
+    public Money calculateDiscount(Money subtotal, Money deliveryFee, BigDecimal value) {
         return deliveryFee;
     }
 }

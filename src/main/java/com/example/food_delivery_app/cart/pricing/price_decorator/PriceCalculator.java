@@ -7,5 +7,5 @@ import com.example.food_delivery_app.common.Money;
 public interface PriceCalculator {
 
     // Takes the items subtotal, returns the amount with all fees added.
-    Money calculate(Money subtotal);
+    Money calculatePrice(Money subtotal);
 }

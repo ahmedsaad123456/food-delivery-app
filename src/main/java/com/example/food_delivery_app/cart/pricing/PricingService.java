@@ -27,7 +27,7 @@ public class PricingService {
     }
 
     // total = (subtotal + tax + service fee) + delivery fee - discount
-    public PriceSummary price(Money subtotal, DiscountType type, BigDecimal discountValue) {
+    public PriceSummary totalPriceWithoutDiscount(Money subtotal, DiscountType type, BigDecimal discountValue) {
         Money discount = Money.zero(subtotal.currency());
         if (type != null) {
             BigDecimal value = discountValue == null ? BigDecimal.ZERO : discountValue;
@@ -37,7 +37,7 @@ public class PricingService {
             discount = discountService.discountFor(type, subtotal, deliveryFee, value);
         }
         // The discount contract (<= subtotal + deliveryFee) guarantees this never goes negative.
-        Money total = calculator.calculate(subtotal).add(deliveryFee).subtract(discount);
+        Money total = calculator.calculatePrice(subtotal).add(deliveryFee).subtract(discount);
         return new PriceSummary(subtotal, deliveryFee, discount, total);
     }
 }

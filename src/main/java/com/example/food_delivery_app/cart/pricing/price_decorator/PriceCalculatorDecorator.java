@@ -3,7 +3,7 @@ package com.example.food_delivery_app.cart.pricing.price_decorator;
 import com.example.food_delivery_app.common.Money;
 
 /**
- * Decorator base: it IS a PriceCalculator and it HAS a PriceCalculator (inner).
+ * Decorator base: it IS a PriceCalculator, and it HAS a PriceCalculator (inner).
  * calculate() = whatever the inner one returns + this decorator's own extra charge.
  */
 public abstract class PriceCalculatorDecorator implements PriceCalculator {
@@ -15,8 +15,8 @@ public abstract class PriceCalculatorDecorator implements PriceCalculator {
     }
 
     @Override
-    public final Money calculate(Money subtotal) {
-        return inner.calculate(subtotal).add(extraCharge(subtotal));
+    public final Money calculatePrice(Money subtotal) {
+        return inner.calculatePrice(subtotal).add(extraCharge(subtotal));
     }
 
     // Computed from the ORIGINAL subtotal, so fees never compound on each other.

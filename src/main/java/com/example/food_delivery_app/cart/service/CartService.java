@@ -11,9 +11,9 @@ import com.example.food_delivery_app.common.ErrorCode;
 import com.example.food_delivery_app.common.Money;
 import com.example.food_delivery_app.exceptions.AppException;
 import com.example.food_delivery_app.exceptions.ResourceNotFoundException;
-import com.example.food_delivery_app.menu.entity.MenuItem;
-import com.example.food_delivery_app.menu.repository.MenuItemRepository;
-import com.example.food_delivery_app.menu.service.MenuItemService;
+import com.example.food_delivery_app.restaurant.entity.MenuItem;
+import com.example.food_delivery_app.restaurant.repository.MenuItemRepository;
+import com.example.food_delivery_app.restaurant.service.MenuItemService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -35,7 +35,7 @@ public class CartService {
     private final PricingService pricingService;
 
     public void addToCart(Integer userId, Integer menuItemId, int quantity) {
-        menuItemService.isAvailable(menuItemId, quantity); // check if the menu item is available and has enough stock
+        menuItemService.assertAvailableMenuItem(menuItemId, quantity); // check if the menu item is available and has enough stock
         MenuItem item = menuItemRepository.findById(menuItemId)
                 .orElseThrow(() -> new ResourceNotFoundException("MenuItem", menuItemId));
         if (!item.isAvailable()) {
@@ -106,8 +106,8 @@ public class CartService {
         return new CartResponse(lines, subtotal);
     }
 
-    public PriceSummary summary(Integer userId, DiscountType type, BigDecimal discountValue) {
-        return pricingService.price(getCart(userId).subtotal(), type, discountValue);
+    public PriceSummary getCartPriceSummary(Integer userId, DiscountType type, BigDecimal discountValue) {
+        return pricingService.totalPriceWithoutDiscount(getCart(userId).subtotal(), type, discountValue);
     }
 
     public void clearCart(Integer userId) {

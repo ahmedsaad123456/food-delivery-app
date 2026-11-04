@@ -1,6 +1,6 @@
 package com.example.food_delivery_app.payment.webhock;
 
-import com.example.food_delivery_app.menu.service.MenuItemService;
+import com.example.food_delivery_app.restaurant.service.MenuItemService;
 import com.example.food_delivery_app.order.entity.Order;
 import com.example.food_delivery_app.order.entity.OrderStatus;
 import com.example.food_delivery_app.order.repository.OrderRepository;
@@ -30,7 +30,7 @@ public class CheckoutCompletedHandler implements WebhookHandler {
     @Override public PaymentEventType type() { return PaymentEventType.CHECKOUT_COMPLETED; }
 
     @Override
-    public void handle(PaymentEvent event) {
+    public void handleEvent(PaymentEvent event) {
         Payment payment = payments.findByStripeSessionId(event.sessionId()).orElse(null);
         if (payment == null) {
             log.warn("Unknown checkout session {}: ignored", event.sessionId());   // retrying can never fix this
@@ -52,7 +52,7 @@ public class CheckoutCompletedHandler implements WebhookHandler {
         }
 
         // Case B: paid, but an item ran out in the meantime (someone bought the last one)
-        if (!menuItemService.tryDeduct(order)) {
+        if (!menuItemService.tryDeductItemsFromStock(order)) {
             log.warn("Order {} went out of stock after payment: cancelling and refunding", order.getId());
             order.cancel();                                    // PENDING -> CANCELLED (the user sees it in GET /orders/{id})
             refund(payment, order.getUserId(), RefundReason.OUT_OF_STOCK);

@@ -6,7 +6,7 @@ import com.example.food_delivery_app.common.Money;
 public class BasePriceCalculator implements PriceCalculator {
 
     @Override
-    public Money calculate(Money subtotal) {
+    public Money calculatePrice(Money subtotal) {
         return subtotal;
     }
 }

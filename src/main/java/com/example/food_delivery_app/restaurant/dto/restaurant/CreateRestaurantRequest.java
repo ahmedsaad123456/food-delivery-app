@@ -1,4 +1,4 @@
-package com.example.food_delivery_app.restaurant.dto;
+package com.example.food_delivery_app.restaurant.dto.restaurant;
 
 import com.example.food_delivery_app.validation.EgyptianPhone;
 import jakarta.validation.constraints.NotBlank;

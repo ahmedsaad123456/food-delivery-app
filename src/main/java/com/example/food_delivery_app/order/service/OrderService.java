@@ -3,15 +3,12 @@ package com.example.food_delivery_app.order.service;
 import com.example.food_delivery_app.cart.pricing.PriceSummary;
 import com.example.food_delivery_app.cart.pricing.PricingService;
 import com.example.food_delivery_app.cart.repository.CartRepository;
-import com.example.food_delivery_app.common.Constants;
-import com.example.food_delivery_app.common.ErrorCode;
-import com.example.food_delivery_app.common.Money;
-import com.example.food_delivery_app.common.PageResponse;
+import com.example.food_delivery_app.common.*;
 import com.example.food_delivery_app.exceptions.AppException;
 import com.example.food_delivery_app.exceptions.ResourceNotFoundException;
-import com.example.food_delivery_app.menu.entity.MenuItem;
-import com.example.food_delivery_app.menu.repository.MenuItemRepository;
-import com.example.food_delivery_app.menu.service.MenuItemService;
+import com.example.food_delivery_app.restaurant.entity.MenuItem;
+import com.example.food_delivery_app.restaurant.repository.MenuItemRepository;
+import com.example.food_delivery_app.restaurant.service.MenuItemService;
 import com.example.food_delivery_app.order.dto.OrderResponse;
 import com.example.food_delivery_app.order.dto.OrderSummaryResponse;
 import com.example.food_delivery_app.order.dto.PlaceOrderRequest;
@@ -25,6 +22,7 @@ import com.example.food_delivery_app.order.events.OrderPlacedEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -64,24 +62,24 @@ public class OrderService {
         Integer restaurantId = singleRestaurantId(items.values());
 
         // snapshot lines: name and price come from the DB, never from the client
-        List<OrderLine> lines = toLines(cart, items);
+        List<OrderLine> lines = toOrderLines(cart, items);
 
         // price it
         Money subtotal = lines.stream()
                 .map(OrderLine::lineTotal)
                 .reduce(Money.zero(Money.EGP), Money::add);
-        PriceSummary price = pricingService.price(subtotal, request.discountType(), request.discountValue());
+        PriceSummary price = pricingService.totalPriceWithoutDiscount(subtotal, request.discountType(), request.discountValue());
 
         // create and save (the items are saved by cascade)
         Order order = Order.create(userId, restaurantId, lines, price);
-        menuItemService.assertAvailable(order);        // 409 with a message if something ran out
+        menuItemService.assertItemsAvailableFromOrder(order);        // 409 with a message if something ran out
         orderRepository.save(order);
 
         // the cart is cleared AFTER the commit, by CartCleanupListener
         events.publishEvent(new OrderPlacedEvent(order.getId(), userId));
 
         // map inside the transaction: order.items is lazy and needs the open session
-        return orderMapper.toResponse(order);
+        return orderMapper.toOrderResponse(order);
     }
 
     // ---------- private helpers (no @Transactional: they run inside placeOrder's transaction) ----------
@@ -114,7 +112,7 @@ public class OrderService {
     }
 
     // snapshot the cart into order lines, using the DB as the source of truth for name and price
-    private List<OrderLine> toLines(Map<Integer, Integer> cart, Map<Integer, MenuItem> items) {
+    private List<OrderLine> toOrderLines(Map<Integer, Integer> cart, Map<Integer, MenuItem> items) {
         return cart.entrySet().stream()
                 .map(e -> {
                     MenuItem item = items.get(e.getKey());
@@ -129,69 +127,63 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     public OrderResponse getOrder(Integer id) {
-        return orderMapper.toResponse(findOrThrow(id));
+        return orderMapper.toOrderResponse(findOrderOrThrow(id));
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<OrderSummaryResponse> getMyOrders(Integer userId, OrderStatus status, Pageable pageable) {
-        validateSort(pageable);
+    public PageResponse<OrderSummaryResponse> getMyOrders(Integer userId, OrderStatus status, PageQuery pageQuery) {
+        Pageable pageable = pageQuery.toPageable(SORTABLE, Constants.CREATED_AT, Sort.Direction.DESC);
         Specification<Order> spec = Specification.allOf(
                 OrderSpecs.userId(userId),
                 OrderSpecs.status(status));
-        return PageResponse.from(orderRepository.findAll(spec, pageable).map(orderMapper::toSummary));
+        return PageResponse.from(orderRepository.findAll(spec, pageable).map(orderMapper::toOrderSummary));
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<OrderSummaryResponse> getRestaurantOrders(Integer restaurantId, OrderStatus status, Pageable pageable) {
-        validateSort(pageable);
+    public PageResponse<OrderSummaryResponse> getRestaurantOrders(Integer restaurantId, OrderStatus status, PageQuery pageQuery) {
+        Pageable pageable = pageQuery.toPageable(SORTABLE, Constants.CREATED_AT, Sort.Direction.DESC);
         Specification<Order> spec = Specification.allOf(
                 OrderSpecs.restaurantId(restaurantId),
                 OrderSpecs.status(status));
-        return PageResponse.from(orderRepository.findAll(spec, pageable).map(orderMapper::toSummary));
+        return PageResponse.from(orderRepository.findAll(spec, pageable).map(orderMapper::toOrderSummary));
     }
 
 // ---------- commands (state changes) ----------
 
     @Transactional
-    public OrderResponse cancel(Integer id) {
-        Order order = findOrThrow(id);
+    public OrderResponse cancelOrder(Integer id) {
+        Order order = findOrderOrThrow(id);
         order.cancel();                              // the entity checks the transition rules
-        return orderMapper.toResponse(order);
+        return orderMapper.toOrderResponse(order);
     }
 
     @Transactional
-    public OrderResponse startPreparing(Integer id) {
-        Order order = findOrThrow(id);
+    public OrderResponse startOrderPreparing(Integer id) {
+        Order order = findOrderOrThrow(id);
         order.startPreparing();
-        return orderMapper.toResponse(order);
+        return orderMapper.toOrderResponse(order);
     }
 
     @Transactional
-    public OrderResponse markOutForDelivery(Integer id) {
-        Order order = findOrThrow(id);
+    public OrderResponse markOrderOutForDelivery(Integer id) {
+        Order order = findOrderOrThrow(id);
         order.markOutForDelivery();
-        return orderMapper.toResponse(order);
+        return orderMapper.toOrderResponse(order);
     }
 
     @Transactional
-    public OrderResponse markDelivered(Integer id) {
-        Order order = findOrThrow(id);
+    public OrderResponse markOrderDelivered(Integer id) {
+        Order order = findOrderOrThrow(id);
         order.markDelivered();
-        return orderMapper.toResponse(order);
+        return orderMapper.toOrderResponse(order);
     }
 
 // ---------- helpers ----------
 
-    private Order findOrThrow(Integer id) {
+    private Order findOrderOrThrow(Integer id) {
         return orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(Constants.ORDER, id));
     }
 
-    private void validateSort(Pageable pageable) {
-        pageable.getSort().forEach(o -> {
-            if (!SORTABLE.contains(o.getProperty())) {
-                throw new AppException(ErrorCode.INVALID_SORT_FIELD, o.getProperty(), SORTABLE);
-            }
-        });
-    }
+
 }

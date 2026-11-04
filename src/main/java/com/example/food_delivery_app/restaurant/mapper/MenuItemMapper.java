@@ -1,9 +1,9 @@
-package com.example.food_delivery_app.menu.mapper;
+package com.example.food_delivery_app.restaurant.mapper;
 
-import com.example.food_delivery_app.menu.dto.CreateMenuItemRequest;
-import com.example.food_delivery_app.menu.dto.MenuItemResponse;
-import com.example.food_delivery_app.menu.dto.UpdateMenuItemRequest;
-import com.example.food_delivery_app.menu.entity.MenuItem;
+import com.example.food_delivery_app.restaurant.dto.menu_item.CreateMenuItemRequest;
+import com.example.food_delivery_app.restaurant.dto.menu_item.MenuItemResponse;
+import com.example.food_delivery_app.restaurant.dto.menu_item.UpdateMenuItemRequest;
+import com.example.food_delivery_app.restaurant.entity.MenuItem;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
@@ -12,17 +12,17 @@ import org.mapstruct.MappingTarget;
 public interface MenuItemMapper {
 
     @Mapping(target = "restaurantId", source = "restaurant.id")
-    MenuItemResponse toResponse(MenuItem item);
+    MenuItemResponse toMenuItemResponse(MenuItem item);
 
     @Mapping(target = "id",         ignore = true)
     @Mapping(target = "restaurant", ignore = true)      // set in the service
     @Mapping(target = "createdAt",  ignore = true)
     @Mapping(target = "updatedAt",  ignore = true)
-    MenuItem toEntity(CreateMenuItemRequest request);
+    MenuItem toMenuItemEntity(CreateMenuItemRequest request);
 
     @Mapping(target = "id",         ignore = true)
     @Mapping(target = "restaurant", ignore = true)
     @Mapping(target = "createdAt",  ignore = true)
     @Mapping(target = "updatedAt",  ignore = true)
-    void update(UpdateMenuItemRequest request, @MappingTarget MenuItem item);
+    void updateMenuItem(UpdateMenuItemRequest request, @MappingTarget MenuItem item);
 }

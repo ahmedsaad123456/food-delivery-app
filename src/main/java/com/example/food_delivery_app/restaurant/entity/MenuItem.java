@@ -1,6 +1,5 @@
-package com.example.food_delivery_app.menu.entity;
+package com.example.food_delivery_app.restaurant.entity;
 
-import com.example.food_delivery_app.restaurant.entity.Restaurant;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;

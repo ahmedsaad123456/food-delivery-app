@@ -2,8 +2,8 @@ package com.example.food_delivery_app.restaurant.mapper;
 
 
 
-import com.example.food_delivery_app.restaurant.dto.CreateRestaurantRequest;
-import com.example.food_delivery_app.restaurant.dto.RestaurantResponse;
+import com.example.food_delivery_app.restaurant.dto.restaurant.CreateRestaurantRequest;
+import com.example.food_delivery_app.restaurant.dto.restaurant.RestaurantResponse;
 import com.example.food_delivery_app.restaurant.entity.Category;
 import com.example.food_delivery_app.restaurant.entity.Restaurant;
 import org.mapstruct.Mapper;
@@ -19,7 +19,7 @@ public interface RestaurantMapper {
     // but because category is lazy loaded, we need to make sure that the category is fetched before mapping.
     // That is why hibernate will fetch the category when we access the name property.
     @Mapping(target = "categoryName", source = "category.name")
-    RestaurantResponse toResponse(Restaurant restaurant);
+    RestaurantResponse toRestaurantResponse(Restaurant restaurant);
 
     // Request + Category -> Entity.
     @Mapping(target = "id",        ignore = true)
@@ -31,11 +31,11 @@ public interface RestaurantMapper {
     @Mapping(target = "address",     source = "request.address")
     @Mapping(target = "phone",       source = "request.phone")
     @Mapping(target = "open",        source = "request.open")
-    Restaurant toEntity(CreateRestaurantRequest request, Category category);
+    Restaurant toRestaurantEntity(CreateRestaurantRequest request, Category category);
 
     // N +1 problem: when we map a list of restaurants to a list of responses,
     // we need to make sure that the category is fetched for each restaurant.
-    List<RestaurantResponse> toListResponse(
+    List<RestaurantResponse> toListRestaurantResponse(
             List<Restaurant> restaurants
     );
 }

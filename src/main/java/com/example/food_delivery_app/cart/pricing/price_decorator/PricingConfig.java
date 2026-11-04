@@ -1,9 +1,5 @@
 package com.example.food_delivery_app.cart.pricing.price_decorator;
 
-import com.example.food_delivery_app.cart.pricing.price_decorator.BasePriceCalculator;
-import com.example.food_delivery_app.cart.pricing.price_decorator.PriceCalculator;
-import com.example.food_delivery_app.cart.pricing.price_decorator.ServiceFeeDecorator;
-import com.example.food_delivery_app.cart.pricing.price_decorator.TaxDecorator;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

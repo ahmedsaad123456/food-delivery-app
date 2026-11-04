@@ -29,7 +29,7 @@ public class WebhookService {
 
     // ONE transaction: the event id and every change made by the handler are saved together or not at all
     @Transactional
-    public void process(PaymentEvent event) {
+    public void processEvent(PaymentEvent event) {
 
         // The event id is unique, so if we have already processed it, we ignore it.
         // This is important because Stripe may send the same event multiple times.
@@ -42,6 +42,6 @@ public class WebhookService {
             log.debug("No handler for {}: ignored", event.type());  // UNKNOWN: an event we do not care about
             return;                                                // 200
         }
-        handler.handle(event);        // an unchecked exception here rolls everything back, including the id row
+        handler.handleEvent(event);        // an unchecked exception here rolls everything back, including the id row
     }
 }

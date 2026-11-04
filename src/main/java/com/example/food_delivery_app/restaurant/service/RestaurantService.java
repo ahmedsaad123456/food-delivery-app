@@ -2,14 +2,15 @@ package com.example.food_delivery_app.restaurant.service;
 
 import com.example.food_delivery_app.common.Constants;
 import com.example.food_delivery_app.common.ErrorCode;
+import com.example.food_delivery_app.common.PageQuery;
 import com.example.food_delivery_app.common.PageResponse;
 import com.example.food_delivery_app.exceptions.AppException;
 import com.example.food_delivery_app.exceptions.ResourceNotFoundException;
-import com.example.food_delivery_app.restaurant.dto.CreateRestaurantRequest;
-import com.example.food_delivery_app.restaurant.dto.RestaurantListItem;
-import com.example.food_delivery_app.restaurant.dto.RestaurantSummary;
+import com.example.food_delivery_app.restaurant.dto.restaurant.CreateRestaurantRequest;
+import com.example.food_delivery_app.restaurant.dto.restaurant.RestaurantListItem;
+import com.example.food_delivery_app.restaurant.dto.restaurant.RestaurantSummary;
 import com.example.food_delivery_app.restaurant.mapper.RestaurantMapper;
-import com.example.food_delivery_app.restaurant.dto.RestaurantResponse;
+import com.example.food_delivery_app.restaurant.dto.restaurant.RestaurantResponse;
 import com.example.food_delivery_app.restaurant.entity.Category;
 import com.example.food_delivery_app.restaurant.entity.Restaurant;
 import com.example.food_delivery_app.restaurant.repository.CategoryRepository;
@@ -20,6 +21,7 @@ import com.example.food_delivery_app.users.entity.User;
 import com.example.food_delivery_app.users.repository.UserRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -47,10 +49,10 @@ public class RestaurantService {
 
         // service.create(request, String ownerEmail)
         User owner = userRepository.findByEmail(ownerEmail).orElseThrow(() -> new ResourceNotFoundException(Constants.USER, ownerEmail));
-        Restaurant restaurant = mapper.toEntity(req, category);
+        Restaurant restaurant = mapper.toRestaurantEntity(req, category);
         restaurant.setOwner(owner);
         Restaurant saved = restaurantRepository.save(restaurant);
-        return mapper.toResponse(saved);
+        return mapper.toRestaurantResponse(saved);
     }
 
     @Transactional(readOnly = true)
@@ -58,12 +60,12 @@ public class RestaurantService {
     public RestaurantResponse getRestaurantById(Integer id) {
         Restaurant restaurant = restaurantRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(Constants.RESTAURANT, id));
-        return mapper.toResponse(restaurant);
+        return mapper.toRestaurantResponse(restaurant);
     }
 
     @Transactional(readOnly = true)
     public List<RestaurantResponse> getAllRestaurants() {
-        return mapper.toListResponse(
+        return mapper.toListRestaurantResponse(
                 restaurantRepository.findAll()
         );
     }
@@ -84,7 +86,7 @@ public class RestaurantService {
         restaurant.setCategory(category);
 
         Restaurant updated = restaurantRepository.save(restaurant);
-        return mapper.toResponse(updated);
+        return mapper.toRestaurantResponse(updated);
     }
 
     @Transactional
@@ -95,8 +97,10 @@ public class RestaurantService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<RestaurantListItem> search(RestaurantSearchCriteria c, Pageable pageable) {
-        validateSort(pageable);
+    public PageResponse<RestaurantListItem> searchForRestaurants(RestaurantSearchCriteria c, PageQuery pageQuery) {
+        // default values for pageQuery if not provided
+        Pageable pageable = pageQuery.toPageable(SORTABLE, Constants.NAME, Sort.Direction.ASC);
+
         Specification<Restaurant> spec = Specification.allOf(
                 RestaurantSpecs.nameContains(c.name()),
                 RestaurantSpecs.category(c.categoryId()),
@@ -108,11 +112,4 @@ public class RestaurantService {
         return PageResponse.from(page.map(RestaurantListItem::from));
     }
 
-    private void validateSort(Pageable pageable) {
-        pageable.getSort().forEach(order -> {
-            if (!SORTABLE.contains(order.getProperty())) {
-                throw new AppException(ErrorCode.INVALID_SORT_FIELD, order.getProperty(), SORTABLE);
-            }
-        });
-    }
 }

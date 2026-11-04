@@ -20,11 +20,11 @@ public interface DiscountStrategy {
 
     DiscountType type();
 
-    Money calculate(Money subtotal, Money deliveryFee, BigDecimal value);
+    Money calculateDiscount(Money subtotal, Money deliveryFee, BigDecimal value);
 
     // Shared helper: enforces the "<= subtotal + deliveryFee" part of the contract.
     // capped means: if the discount is larger than the total, return the total instead.
-    static Money capped(Money discount, Money subtotal, Money deliveryFee) {
+    static Money capDiscount(Money discount, Money subtotal, Money deliveryFee) {
         return discount.min(subtotal.add(deliveryFee));
     }
 }

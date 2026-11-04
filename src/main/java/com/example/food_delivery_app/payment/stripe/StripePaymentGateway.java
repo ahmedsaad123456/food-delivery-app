@@ -42,7 +42,7 @@ public class StripePaymentGateway
 
     // ---------- Port 1: create a Checkout Session ----------
     @Override
-    public CheckoutSession create(CheckoutRequest r) {
+    public CheckoutSession createSession(CheckoutRequest r) {
         String currency = r.currency().toLowerCase();               // Stripe wants lowercase
         try {
             SessionCreateParams.Builder params = SessionCreateParams.builder() // use builder to avoid long constructor with many params
@@ -91,7 +91,7 @@ public class StripePaymentGateway
 
     // ---------- Port 2: refund ----------
     @Override
-    public void refund(String paymentReference, BigDecimal amount, String currency, String idempotencyKey) {
+    public void refundPayment(String paymentReference, BigDecimal amount, String currency, String idempotencyKey) {
         try {
             Refund.create(RefundCreateParams.builder() // create a refund in Stripe with the payment reference, amount, and currency
                     .setPaymentIntent(paymentReference) // the payment reference is the Stripe payment intent id, which is returned in the checkout.session.completed event
@@ -122,7 +122,7 @@ public class StripePaymentGateway
 
     // ---------- Port 3: verify webhook signature ----------
     @Override
-    public PaymentEvent verify(String payload, String signatureHeader) {
+    public PaymentEvent verifyStripeSignature(String payload, String signatureHeader) {
         // The webhook secret is used to verify the signature of the webhook event.
         // It is configured in the application properties and should not be null or blank.
         if (props.webhookSecret() == null || props.webhookSecret().isBlank()) {
@@ -141,16 +141,16 @@ public class StripePaymentGateway
 
         // The event type is used to determine what kind of payment event it is, and we extract the relevant data from the event object.
         return switch (event.getType()) {
-            case "checkout.session.completed"    -> fromSession(event);
-            case "payment_intent.payment_failed" -> fromPaymentIntent(event);
-            case "charge.refunded"               -> fromCharge(event);
+            case "checkout.session.completed"    -> getPaymentIntentAndOrderIdFromSession(event);
+            case "payment_intent.payment_failed" -> getOrderIdFromPaymentIntent(event);
+            case "charge.refunded"               -> getPaymentIntentAndOrderIdFromCharge(event);
             default -> new PaymentEvent(event.getId(), PaymentEventType.UNKNOWN, null, null, null);
         };
     }
 
     // from session, we can get the payment intent and the order id from the metadata.
     // The payment intent is used to identify the payment in Stripe, and the order id is used to identify the order in our system.
-    private PaymentEvent fromSession(Event event) {
+    private PaymentEvent getPaymentIntentAndOrderIdFromSession(Event event) {
         // The data object of the event is a Session object, which contains the payment status, payment intent, and metadata.
         Session s = (Session) dataObject(event);
         // "paid" for cards. Delayed methods (bank debit) complete the session first and pay later.
@@ -161,13 +161,13 @@ public class StripePaymentGateway
 
     // from payment intent, we can get the order id from the metadata.
     // The payment intent is used to identify the payment in Stripe, and the order id is used to identify the order in our system.
-    private PaymentEvent fromPaymentIntent(Event event) {
+    private PaymentEvent getOrderIdFromPaymentIntent(Event event) {
         PaymentIntent pi = (PaymentIntent) dataObject(event);
         return new PaymentEvent(event.getId(), PaymentEventType.PAYMENT_FAILED, null, pi.getId(), orderId(pi.getMetadata()));
     }
 
     // from charge, we can get the payment intent and the order id from the metadata.
-    private PaymentEvent fromCharge(Event event) {
+    private PaymentEvent getPaymentIntentAndOrderIdFromCharge(Event event) {
         Charge c = (Charge) dataObject(event);
         // charge.refunded also fires for PARTIAL refunds. We only handle full refunds for now.
         PaymentEventType type = Boolean.TRUE.equals(c.getRefunded())
