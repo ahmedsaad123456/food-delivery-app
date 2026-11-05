@@ -1,9 +1,10 @@
-### Inventory Concurrency & Overselling Protection
+### Asynchronous Processing & Thread Management
 
-- Added a concurrency test using `ExecutorService` and `CountDownLatch` to simulate 50 threads attempting to purchase the last 5 items, reproducing the overselling problem.
-- Implemented and tested three concurrency control strategies:
-  - **Optimistic Locking:** Added `@Version` with retry handling for `OptimisticLockingFailureException`.
-  - **Pessimistic Locking:** Added `@Lock(LockModeType.PESSIMISTIC_WRITE)` to the repository query.
-  - **Atomic SQL Update:** Used a conditional `UPDATE` statement to prevent stock from dropping below zero.
-- Compared all three approaches in terms of simplicity and performance under high concurrency.
-- Selected the most suitable approach for inventory management.
+- Configured a dedicated `ThreadPoolTaskExecutor` with custom core pool size, maximum pool size, queue capacity, and thread name prefix.
+- Enabled asynchronous execution using `@EnableAsync` and moved notification processing to `@Async("orderExecutor")`.
+- Verified that async tasks run on separate threads from the request thread.
+- Identified that `SecurityContextHolder` and MDC context are not automatically propagated to async threads.
+- Implemented a `TaskDecorator` to propagate the security context and MDC data to async threads, with proper cleanup after execution.
+- Used `CompletableFuture` to execute ETA calculation, driver assignment, and notifications concurrently after payment confirmation.
+- Added asynchronous error handling using `exceptionally` and `handle`.
+- Verified that Spring transactions do not automatically propagate to methods executed on separate `@Async` threads using `TransactionSynchronizationManager.isActualTransactionActive()`.

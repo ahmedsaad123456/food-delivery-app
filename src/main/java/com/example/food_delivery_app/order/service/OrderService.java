@@ -20,6 +20,7 @@ import com.example.food_delivery_app.order.repository.OrderRepository;
 import com.example.food_delivery_app.order.specification.OrderSpecs;
 import com.example.food_delivery_app.order.events.OrderPlacedEvent;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -36,6 +37,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class OrderService {
 
     private final CartRepository cartRepository;
@@ -50,7 +52,6 @@ public class OrderService {
 
     @Transactional
     public OrderResponse placeOrder(Integer userId, PlaceOrderRequest request) {
-
         // read the cart (Redis)
         Map<Integer, Integer> cart = cartRepository.findAll(userId);
         if (cart.isEmpty()) {
@@ -74,8 +75,12 @@ public class OrderService {
         Order order = Order.create(userId, restaurantId, lines, price);
         menuItemService.assertItemsAvailableFromOrder(order);        // 409 with a message if something ran out
         orderRepository.save(order);
+        log.info("order {} placed on thread [{}]", order.getId(), Thread.currentThread().getName());
+
 
         // the cart is cleared AFTER the commit, by CartCleanupListener
+        // publish an event AFTER the commit, so that the email is sent only if the order is really saved
+        // we use @Async in the listener to hand the work to a thread pool and return immediately
         events.publishEvent(new OrderPlacedEvent(order.getId(), userId));
 
         // map inside the transaction: order.items is lazy and needs the open session

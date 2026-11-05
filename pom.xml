@@ -14,7 +14,7 @@
 
 	<groupId>com.example</groupId>
 	<artifactId>food_delivery_app</artifactId>
-	<version>12.0.0</version>
+	<version>13.0.0</version>
 	<name>food_delivery_app</name>
 	<description>Food Delivery Application</description>
 
