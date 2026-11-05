@@ -1,4 +1,4 @@
-package com.example.food_delivery_app.order.entity;
+package com.example.food_delivery_app.order.entity.order;
 
 import java.util.EnumSet;
 import java.util.Map;

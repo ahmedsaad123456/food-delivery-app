@@ -1,4 +1,4 @@
-package com.example.food_delivery_app.order.entity;
+package com.example.food_delivery_app.order.entity.order;
 import com.example.food_delivery_app.common.Money;
 import jakarta.persistence.*;
 import lombok.AccessLevel;

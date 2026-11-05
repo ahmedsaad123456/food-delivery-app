@@ -6,15 +6,19 @@ import com.example.food_delivery_app.cart.repository.CartRepository;
 import com.example.food_delivery_app.common.*;
 import com.example.food_delivery_app.exceptions.AppException;
 import com.example.food_delivery_app.exceptions.ResourceNotFoundException;
+import com.example.food_delivery_app.order.dto.order.TimelineEntryResponse;
+import com.example.food_delivery_app.order.entity.driver.DriverStatus;
+import com.example.food_delivery_app.order.repository.DriverRepository;
+import com.example.food_delivery_app.order.repository.OrderTimelineRepository;
 import com.example.food_delivery_app.restaurant.entity.MenuItem;
 import com.example.food_delivery_app.restaurant.repository.MenuItemRepository;
 import com.example.food_delivery_app.restaurant.service.MenuItemService;
-import com.example.food_delivery_app.order.dto.OrderResponse;
-import com.example.food_delivery_app.order.dto.OrderSummaryResponse;
-import com.example.food_delivery_app.order.dto.PlaceOrderRequest;
-import com.example.food_delivery_app.order.entity.Order;
-import com.example.food_delivery_app.order.entity.OrderLine;
-import com.example.food_delivery_app.order.entity.OrderStatus;
+import com.example.food_delivery_app.order.dto.order.OrderResponse;
+import com.example.food_delivery_app.order.dto.order.OrderSummaryResponse;
+import com.example.food_delivery_app.order.dto.order.PlaceOrderRequest;
+import com.example.food_delivery_app.order.entity.order.Order;
+import com.example.food_delivery_app.order.entity.order.OrderLine;
+import com.example.food_delivery_app.order.entity.order.OrderStatus;
 import com.example.food_delivery_app.order.mapper.OrderMapper;
 import com.example.food_delivery_app.order.repository.OrderRepository;
 import com.example.food_delivery_app.order.specification.OrderSpecs;
@@ -43,10 +47,13 @@ public class OrderService {
     private final CartRepository cartRepository;
     private final MenuItemRepository menuItemRepository;
     private final OrderRepository orderRepository;
+    private final OrderTimelineRepository orderTimelineRepository;
     private final PricingService pricingService;
     private final MenuItemService menuItemService;
     private final OrderMapper orderMapper;
     private final ApplicationEventPublisher events;
+    private final OrderStatusService statusService;
+    private final DriverRepository drivers;
     private static final Set<String> SORTABLE = Set.of("createdAt", "total", "status", "id");
 
 
@@ -75,6 +82,7 @@ public class OrderService {
         Order order = Order.create(userId, restaurantId, lines, price);
         menuItemService.assertItemsAvailableFromOrder(order);        // 409 with a message if something ran out
         orderRepository.save(order);
+        statusService.recordCreated(order); // first timeline entry: PENDING
         log.info("order {} placed on thread [{}]", order.getId(), Thread.currentThread().getName());
 
 
@@ -131,7 +139,7 @@ public class OrderService {
 // ---------- queries ----------
 
     @Transactional(readOnly = true)
-    public OrderResponse getOrder(Integer id) {
+    public OrderResponse getOrderById(Integer id) {
         return orderMapper.toOrderResponse(findOrderOrThrow(id));
     }
 
@@ -158,28 +166,30 @@ public class OrderService {
     @Transactional
     public OrderResponse cancelOrder(Integer id) {
         Order order = findOrderOrThrow(id);
-        order.cancel();                              // the entity checks the transition rules
+        statusService.orderStatusTransition(order, Order::cancel, Constants.ORDER_CANCELLED);
+        releaseDriverIfAny(order);
         return orderMapper.toOrderResponse(order);
     }
 
     @Transactional
     public OrderResponse startOrderPreparing(Integer id) {
         Order order = findOrderOrThrow(id);
-        order.startPreparing();
+        statusService.orderStatusTransition(order, Order::startPreparing, Constants.RESTAURANT_PREPARING);
         return orderMapper.toOrderResponse(order);
     }
 
     @Transactional
     public OrderResponse markOrderOutForDelivery(Integer id) {
         Order order = findOrderOrThrow(id);
-        order.markOutForDelivery();
+        statusService.orderStatusTransition(order, Order::markOutForDelivery, Constants.ORDER_LEFT_RESTAURANT);
         return orderMapper.toOrderResponse(order);
     }
 
     @Transactional
     public OrderResponse markOrderDelivered(Integer id) {
         Order order = findOrderOrThrow(id);
-        order.markDelivered();
+        statusService.orderStatusTransition(order, Order::markDelivered, Constants.ORDER_DELIVERED);
+        releaseDriverIfAny(order);
         return orderMapper.toOrderResponse(order);
     }
 
@@ -189,6 +199,24 @@ public class OrderService {
         return orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(Constants.ORDER, id));
     }
+
+
+    public List<TimelineEntryResponse> getTimeLineByOrderId(Integer orderId) {
+        return orderTimelineRepository.findByOrderIdOrderByTimestampAsc(orderId).stream()
+                .map(e -> new TimelineEntryResponse(e.status(), e.timestamp(), e.note()))
+                .toList();
+    }
+
+
+    private void releaseDriverIfAny(Order order) {
+        if (order.getDriverId() != null) {
+            // only BUSY -> AVAILABLE. If the driver went OFFLINE meanwhile we must NOT make him available
+            drivers.changeStatusIfCurrently(order.getDriverId(), DriverStatus.BUSY, DriverStatus.AVAILABLE);
+        }
+    }
+
+
+
 
 
 }

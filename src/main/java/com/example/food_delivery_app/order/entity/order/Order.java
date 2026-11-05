@@ -1,4 +1,4 @@
-package com.example.food_delivery_app.order.entity;
+package com.example.food_delivery_app.order.entity.order;
 
 import com.example.food_delivery_app.cart.pricing.PriceSummary;
 import com.example.food_delivery_app.common.ErrorCode;
@@ -7,6 +7,7 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -19,6 +20,7 @@ import java.util.List;
 @Entity
 @Table(name = "orders")                       // "order" is a reserved word in SQL
 @Getter
+@Setter
 // PROTECTED: JPA needs it, nobody else may use it
 // to create an Order, use the OrderService.createOrder() method
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -41,6 +43,8 @@ public class Order {
     @Column(name = "total_amount")
     private BigDecimal total; // subtotal + delivery + tax + fee - discount
 
+    @Column(name = "driver_id")
+    private Integer driverId;
 
     // the items in the order, but do not allow modification of the list from outside the Order class
     // cascade = CascadeType.ALL: when an Order is saved, its items are also saved; when an Order is deleted, its items are also deleted

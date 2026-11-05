@@ -11,8 +11,8 @@ import com.example.food_delivery_app.restaurant.dto.menu_item.UpdateMenuItemRequ
 import com.example.food_delivery_app.restaurant.entity.MenuItem;
 import com.example.food_delivery_app.restaurant.mapper.MenuItemMapper;
 import com.example.food_delivery_app.restaurant.repository.MenuItemRepository;
-import com.example.food_delivery_app.order.entity.Order;
-import com.example.food_delivery_app.order.entity.OrderItem;
+import com.example.food_delivery_app.order.entity.order.Order;
+import com.example.food_delivery_app.order.entity.order.OrderItem;
 import com.example.food_delivery_app.restaurant.entity.Restaurant;
 import com.example.food_delivery_app.restaurant.repository.RestaurantRepository;
 import org.springframework.cache.annotation.CacheEvict;

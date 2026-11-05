@@ -14,7 +14,7 @@
 
 	<groupId>com.example</groupId>
 	<artifactId>food_delivery_app</artifactId>
-	<version>13.0.0</version>
+	<version>14.0.0</version>
 	<name>food_delivery_app</name>
 	<description>Food Delivery Application</description>
 
@@ -124,6 +124,20 @@
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
 			<scope>runtime</scope>
+		</dependency>
+
+		<!-- Mongodb-->
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-mongodb</artifactId>
+		</dependency>
+
+		<!-- for tests: a real MongoDB in Docker, like you already do for Postgres -->
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers-mongodb</artifactId>
+			<scope>test</scope>
 		</dependency>
 
 		<!-- Lombok -->

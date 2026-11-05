@@ -1,8 +1,10 @@
 package com.example.food_delivery_app.payment.webhock;
 
+import com.example.food_delivery_app.common.Constants;
+import com.example.food_delivery_app.order.service.OrderStatusService;
 import com.example.food_delivery_app.restaurant.service.MenuItemService;
-import com.example.food_delivery_app.order.entity.Order;
-import com.example.food_delivery_app.order.entity.OrderStatus;
+import com.example.food_delivery_app.order.entity.order.Order;
+import com.example.food_delivery_app.order.entity.order.OrderStatus;
 import com.example.food_delivery_app.order.repository.OrderRepository;
 import com.example.food_delivery_app.payment.entity.Payment;
 import com.example.food_delivery_app.payment.entity.RefundReason;
@@ -26,6 +28,7 @@ public class CheckoutCompletedHandler implements WebhookHandler {
     private final MenuItemService menuItemService;
     private final RefundService refundService;
     private final ApplicationEventPublisher events;
+    private final OrderStatusService orderStatusService;
 
     @Override public PaymentEventType type() { return PaymentEventType.CHECKOUT_COMPLETED; }
 
@@ -60,7 +63,7 @@ public class CheckoutCompletedHandler implements WebhookHandler {
         }
 
         // Case C: the normal path
-        order.markPaid();                                      // dirty checking saves it, no save() call
+        orderStatusService.orderStatusTransition(order, Order::markPaid , Constants.ORDER_PAID);                                      // dirty checking saves it, no save() call
         events.publishEvent(new PaymentSucceededEvent(order.getId(), order.getUserId()));
     }
 

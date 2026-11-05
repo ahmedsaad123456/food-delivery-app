@@ -1,11 +1,11 @@
 package com.example.food_delivery_app.order.mapper;
 
 import com.example.food_delivery_app.common.Money;
-import com.example.food_delivery_app.order.dto.OrderItemResponse;
-import com.example.food_delivery_app.order.dto.OrderResponse;
-import com.example.food_delivery_app.order.dto.OrderSummaryResponse;
-import com.example.food_delivery_app.order.entity.Order;
-import com.example.food_delivery_app.order.entity.OrderItem;
+import com.example.food_delivery_app.order.dto.order.OrderItemResponse;
+import com.example.food_delivery_app.order.dto.order.OrderResponse;
+import com.example.food_delivery_app.order.dto.order.OrderSummaryResponse;
+import com.example.food_delivery_app.order.entity.order.Order;
+import com.example.food_delivery_app.order.entity.order.OrderItem;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 

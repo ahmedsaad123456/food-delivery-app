@@ -61,6 +61,18 @@ public class Constants {
     public static final String NAME = "name";
 
 
+    public static final String ORDER_CANCELLED = "order cancelled";
+
+    public static final String RESTAURANT_PREPARING = "restaurant started preparing";
+
+    public static final String ORDER_LEFT_RESTAURANT = "order left the restaurant";
+
+    public static final String ORDER_DELIVERED = "order delivered";
+
+    public static final String ORDER_CREATED = "Order created";
+
+    public static final String ORDER_PAID = "order paid";
+
 
 
 }

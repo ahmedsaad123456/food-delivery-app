@@ -23,6 +23,10 @@ spring:
 
   jwt-secret-key: ${JWT_SECRET_KEY}
 
+  data:
+    mongodb:
+      auto-index-creation: true
+
 
   messages:
     basename: messages
@@ -49,3 +53,6 @@ app:
     success-url: http://localhost:8080/payment/success?session_id={CHECKOUT_SESSION_ID}
     cancel-url: http://localhost:8080/payment/cancel
     reuse-window: 25m                          # reuse the same checkout session for 25 minutes, then create a new one
+
+delivery:
+  assignment-strategy: least-busy

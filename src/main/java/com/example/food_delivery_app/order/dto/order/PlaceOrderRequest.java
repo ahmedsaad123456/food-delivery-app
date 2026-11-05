@@ -1,4 +1,4 @@
-package com.example.food_delivery_app.order.dto;
+package com.example.food_delivery_app.order.dto.order;
 
 import com.example.food_delivery_app.cart.pricing.discount_strategy.DiscountType;
 import jakarta.validation.constraints.PositiveOrZero;

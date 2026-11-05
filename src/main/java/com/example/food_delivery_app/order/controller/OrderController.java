@@ -3,22 +3,25 @@ package com.example.food_delivery_app.order.controller;
 import com.example.food_delivery_app.common.ApiResponse;
 import com.example.food_delivery_app.common.PageQuery;
 import com.example.food_delivery_app.common.PageResponse;
-import com.example.food_delivery_app.order.dto.OrderResponse;
-import com.example.food_delivery_app.order.dto.OrderSummaryResponse;
-import com.example.food_delivery_app.order.dto.PlaceOrderRequest;
-import com.example.food_delivery_app.order.entity.OrderStatus;
+import com.example.food_delivery_app.order.dto.driver.AssignDriverRequest;
+import com.example.food_delivery_app.order.dto.driver.DriverResponse;
+import com.example.food_delivery_app.order.dto.order.OrderResponse;
+import com.example.food_delivery_app.order.dto.order.OrderSummaryResponse;
+import com.example.food_delivery_app.order.dto.order.PlaceOrderRequest;
+import com.example.food_delivery_app.order.dto.order.TimelineEntryResponse;
+import com.example.food_delivery_app.order.entity.order.OrderStatus;
+import com.example.food_delivery_app.order.service.DriverAssignmentService;
 import com.example.food_delivery_app.order.service.OrderService;
 import com.example.food_delivery_app.users.entity.User;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/orders")
@@ -26,6 +29,7 @@ import org.springframework.web.bind.annotation.*;
 public class OrderController {
 
     private final OrderService orderService;
+    private final DriverAssignmentService assignmentService;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -51,8 +55,8 @@ public class OrderController {
 
     @GetMapping("/{id}")
     @PreAuthorize("@orderSecurity.canView(#id, authentication)")
-    public ApiResponse<OrderResponse> getOrder(@PathVariable Integer id) {
-        return ApiResponse.ok(orderService.getOrder(id));
+    public ApiResponse<OrderResponse> getOrderById(@PathVariable Integer id) {
+        return ApiResponse.ok(orderService.getOrderById(id));
     }
 
     @GetMapping("/restaurants/{restaurantId}")
@@ -86,8 +90,20 @@ public class OrderController {
     }
 
     @PatchMapping("/{id}/delivered")
-    @PreAuthorize("hasAuthority('DELIVERY_UPDATE')")        // day 14: only the driver assigned to this order
+    @PreAuthorize("hasAuthority('DELIVERY_UPDATE')")
     public ApiResponse<OrderResponse> orderDelivered(@PathVariable Integer id) {
         return ApiResponse.ok(orderService.markOrderDelivered(id));
+    }
+
+    @GetMapping("/{orderId}/timeline")
+    @PreAuthorize("@orderSecurity.canView(#orderId, authentication)")
+    public ApiResponse<List<TimelineEntryResponse>> getTimeLineByOrderId(@PathVariable Integer orderId) {
+        return ApiResponse.ok(orderService.getTimeLineByOrderId(orderId));
+    }
+
+    @PostMapping("/{orderId}/assign-driver")
+    public ApiResponse<DriverResponse> assignDriverToOrder(@PathVariable Integer orderId,
+                                                           @Valid @RequestBody AssignDriverRequest request) {
+        return ApiResponse.ok(assignmentService.assignDriverToOrder(orderId, request));
     }
 }

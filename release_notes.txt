@@ -1,10 +1,36 @@
-### Asynchronous Processing & Thread Management
 
-- Configured a dedicated `ThreadPoolTaskExecutor` with custom core pool size, maximum pool size, queue capacity, and thread name prefix.
-- Enabled asynchronous execution using `@EnableAsync` and moved notification processing to `@Async("orderExecutor")`.
-- Verified that async tasks run on separate threads from the request thread.
-- Identified that `SecurityContextHolder` and MDC context are not automatically propagated to async threads.
-- Implemented a `TaskDecorator` to propagate the security context and MDC data to async threads, with proper cleanup after execution.
-- Used `CompletableFuture` to execute ETA calculation, driver assignment, and notifications concurrently after payment confirmation.
-- Added asynchronous error handling using `exceptionally` and `handle`.
-- Verified that Spring transactions do not automatically propagate to methods executed on separate `@Async` threads using `TransactionSynchronizationManager.isActualTransactionActive()`.
+### Driver Management & MongoDB Integration
+
+- Implemented Driver CRUD operations and storing driver information (name, availability status, and location) in PostgreSQL.
+- Applied the Strategy Design Pattern to driver assignment with two implementations: Nearest Driver and Least Busy Driver.
+- Followed the Liskov Substitution Principle (LSP) by defining a consistent contract for both strategies: return `Optional<Driver>` instead of `null` and never assign unavailable drivers.
+- Added a shared contract test to verify that both driver assignment strategies follow the same behavior.
+- Implemented `OrderTimelineEntry` as a MongoDB document to track order status changes, using event listeners to automatically save timeline entries.
+- Added a flexible MongoDB `Review` document to store restaurant reviews, including restaurant ID, rating, and comment.
+- Implemented a MongoDB aggregation pipeline using `Aggregation.group()` and `avg()` to calculate the average rating for each restaurant.
+
+
+
+### When to choose MongoDB instead of PostgreSQL
+
+Default: PostgreSQL. Add MongoDB only when a specific access pattern justifies a second datastore.
+
+Choose MongoDB when:
+- Data is naturally a self-contained document read/written as a unit (e.g. a review with tags, per-dish ratings).
+- The schema varies per record or evolves quickly, and you want to avoid constant migrations.
+- The workload is append-heavy (logs, events, timelines) with simple key-based reads (by orderId).
+- You need horizontal scaling (sharding) or fast denormalized reads without joins.
+
+Choose PostgreSQL when:
+- Data is relational and needs integrity: foreign keys, UNIQUE/CHECK constraints (orders, users, payments, inventory).
+- You need multi-row ACID transactions or strong consistency (money and stock must never be wrong).
+- You run complex queries, joins, or reports.
+- "Flexible schema" alone is not a reason: PostgreSQL's JSONB gives flexible fields with indexing.
+
+In this project:
+- PostgreSQL: users, restaurants, menu, orders, payments, stock, drivers (source of truth).
+- MongoDB: order status timeline and reviews (append-only / flexible documents).
+
+Trade-offs of using both: two datastores to operate, no cross-database foreign keys or transactions
+(orphaned reviews if a restaurant is deleted), and dual-write inconsistency risk
+(Postgres commit succeeds but the Mongo write fails). Mitigation: transactional outbox (planned).

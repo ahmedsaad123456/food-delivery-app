@@ -1,7 +1,7 @@
-package com.example.food_delivery_app.order.dto;
+package com.example.food_delivery_app.order.dto.order;
 
 import com.example.food_delivery_app.common.Money;
-import com.example.food_delivery_app.order.entity.OrderStatus;
+import com.example.food_delivery_app.order.entity.order.OrderStatus;
 
 import java.time.Instant;
 import java.util.List;

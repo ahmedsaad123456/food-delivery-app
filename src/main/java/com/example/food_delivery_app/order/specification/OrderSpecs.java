@@ -1,7 +1,7 @@
 package com.example.food_delivery_app.order.specification;
 
-import com.example.food_delivery_app.order.entity.Order;
-import com.example.food_delivery_app.order.entity.OrderStatus;
+import com.example.food_delivery_app.order.entity.order.Order;
+import com.example.food_delivery_app.order.entity.order.OrderStatus;
 import org.springframework.data.jpa.domain.Specification;
 
 public final class OrderSpecs {
