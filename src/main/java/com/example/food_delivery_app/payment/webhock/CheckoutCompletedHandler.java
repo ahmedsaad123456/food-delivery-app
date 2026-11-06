@@ -2,13 +2,15 @@ package com.example.food_delivery_app.payment.webhock;
 
 import com.example.food_delivery_app.common.Constants;
 import com.example.food_delivery_app.order.service.OrderStatusService;
+import com.example.food_delivery_app.payment.outbox.OutboxEventTypes;
+import com.example.food_delivery_app.payment.service.OutboxService;
+import com.example.food_delivery_app.payment.outbox.PaymentSucceededPayload;
 import com.example.food_delivery_app.restaurant.service.MenuItemService;
 import com.example.food_delivery_app.order.entity.order.Order;
 import com.example.food_delivery_app.order.entity.order.OrderStatus;
 import com.example.food_delivery_app.order.repository.OrderRepository;
 import com.example.food_delivery_app.payment.entity.Payment;
 import com.example.food_delivery_app.payment.entity.RefundReason;
-import com.example.food_delivery_app.payment.event.PaymentSucceededEvent;
 import com.example.food_delivery_app.payment.event.RefundRequestedEvent;
 import com.example.food_delivery_app.payment.gateway.PaymentEvent;
 import com.example.food_delivery_app.payment.gateway.PaymentEventType;
@@ -29,9 +31,15 @@ public class CheckoutCompletedHandler implements WebhookHandler {
     private final RefundService refundService;
     private final ApplicationEventPublisher events;
     private final OrderStatusService orderStatusService;
+    private final OutboxService outbox;
 
     @Override public PaymentEventType type() { return PaymentEventType.CHECKOUT_COMPLETED; }
 
+
+    // Apply the outbox pattern: the event is written INSIDE the same transaction as the order update,
+    // so that if the transaction rolls back, the event is not written either.
+    // if the transaction failed and rolled back, the webhook returns 500 and Stripe retries the webhook later.
+    // so we will not lose the event, and the order will eventually become PAID.
     @Override
     public void handleEvent(PaymentEvent event) {
         Payment payment = payments.findByStripeSessionId(event.sessionId()).orElse(null);
@@ -63,8 +71,13 @@ public class CheckoutCompletedHandler implements WebhookHandler {
         }
 
         // Case C: the normal path
-        orderStatusService.orderStatusTransition(order, Order::markPaid , Constants.ORDER_PAID);                                      // dirty checking saves it, no save() call
-        events.publishEvent(new PaymentSucceededEvent(order.getId(), order.getUserId()));
+        orderStatusService.orderStatusTransition(order, Order::markPaid , Constants.ORDER_PAID);  // dirty checking saves it, no save() call
+
+        Integer orderId = order.getId();
+        // the event is written INSIDE the same transaction as the order update
+        var payload = new PaymentSucceededPayload( orderId,  order.getUserId());
+        outbox.save(String.valueOf(orderId), OutboxEventTypes.PAYMENT_SUCCEEDED, payload);
+        outbox.save(String.valueOf(orderId), OutboxEventTypes.PAYMENT_EMAIL_REQUESTED, payload);
     }
 
     private void refund(Payment payment, Integer userId, RefundReason reason) {

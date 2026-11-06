@@ -2,6 +2,7 @@ package com.example.food_delivery_app.notification;
 
 // A Value Object: an invalid message can never exist,
 // so every sender receives only VALID messages.
+// recipient refers to the email address or phone number of the user to notify
 public record NotificationMessage(String recipient, String subject, String body) {
 
     public NotificationMessage {

@@ -1,36 +1,287 @@
 
-### Driver Management & MongoDB Integration
+### Transactional Outbox Pattern
 
-- Implemented Driver CRUD operations and storing driver information (name, availability status, and location) in PostgreSQL.
-- Applied the Strategy Design Pattern to driver assignment with two implementations: Nearest Driver and Least Busy Driver.
-- Followed the Liskov Substitution Principle (LSP) by defining a consistent contract for both strategies: return `Optional<Driver>` instead of `null` and never assign unavailable drivers.
-- Added a shared contract test to verify that both driver assignment strategies follow the same behavior.
-- Implemented `OrderTimelineEntry` as a MongoDB document to track order status changes, using event listeners to automatically save timeline entries.
-- Added a flexible MongoDB `Review` document to store restaurant reviews, including restaurant ID, rating, and comment.
-- Implemented a MongoDB aggregation pipeline using `Aggregation.group()` and `avg()` to calculate the average rating for each restaurant.
+- Understand the problem: Identified the risk of saving an order and publishing its event in separate steps.
+  If the application crashes between them, the event may never be published. Solved this using the Transactional Outbox Pattern,
+  which stores the event in the same database transaction.
+
+- Add Outbox Database Table: Created Flyway migration V8__outbox.sql to introduce the outbox_events table with the following fields:
+  id, aggregate_id, type, payload, status, attempts, created_at, published_at
+
+- Implement Scheduled Outbox Poller: Added a scheduled poller that fetches pending events in batches using FOR UPDATE SKIP LOCKED,
+  delivers them to registered handlers, and marks successfully processed events as PUBLISHED.
+
+- Add Retry Mechanism: Implemented retry handling with an attempt counter.
+  Events are marked as FAILED after reaching the maximum number of attempts.
+
+- Ensure Idempotent Consumers: Updated consumers to handle duplicate event deliveries safely,
+  preventing the same event from causing harmful side effects more than once.
 
 
+HOW THE OUTBOX PATTERN WORKS
 
-### When to choose MongoDB instead of PostgreSQL
+1. THE PROBLEM
 
-Default: PostgreSQL. Add MongoDB only when a specific access pattern justifies a second datastore.
+One operation needs to change your database and trigger something
+outside it (for example, send an email, assign a driver, or publish to a
+message broker).
 
-Choose MongoDB when:
-- Data is naturally a self-contained document read/written as a unit (e.g. a review with tags, per-dish ratings).
-- The schema varies per record or evolves quickly, and you want to avoid constant migrations.
-- The workload is append-heavy (logs, events, timelines) with simple key-based reads (by orderId).
-- You need horizontal scaling (sharding) or fast denormalized reads without joins.
+The database transaction cannot cover the external system, so either
+order can fail:
 
-Choose PostgreSQL when:
-- Data is relational and needs integrity: foreign keys, UNIQUE/CHECK constraints (orders, users, payments, inventory).
-- You need multi-row ACID transactions or strong consistency (money and stock must never be wrong).
-- You run complex queries, joins, or reports.
-- "Flexible schema" alone is not a reason: PostgreSQL's JSONB gives flexible fields with indexing.
+-   Perform the side effect first, then commit: The side effect may
+    happen even though the database commit fails.
 
-In this project:
-- PostgreSQL: users, restaurants, menu, orders, payments, stock, drivers (source of truth).
-- MongoDB: order status timeline and reviews (append-only / flexible documents).
+-   Commit first, then perform the side effect: The application may
+    crash between the commit and the side effect, so the side effect is
+    lost.
 
-Trade-offs of using both: two datastores to operate, no cross-database foreign keys or transactions
-(orphaned reviews if a restaurant is deleted), and dual-write inconsistency risk
-(Postgres commit succeeds but the Mongo write fails). Mitigation: transactional outbox (planned).
+This is called the DUAL-WRITE PROBLEM.
+
+2. THE IDEA
+
+Do not perform the side effect directly inside the request.
+
+Instead, write a record describing the work (an “outbox event”) to a
+database table in the SAME TRANSACTION as the business change.
+
+A separate background process performs the work later.
+
+3. THE FLOW
+
+A. WRITE (ONE TRANSACTION)
+
+-   Update the business data (for example, change the order status to
+    PAID).
+-   Insert the corresponding rows into outbox_events with status
+    PENDING.
+-   Commit the transaction.
+
+Either all these changes are saved, or none of them are saved.
+
+B. ACKNOWLEDGE
+
+Return success to the caller (for example, HTTP 200 to Stripe).
+
+This means: “I have durably recorded everything needed.” It does NOT
+mean: “All side effects have already been completed.”
+
+C. RELAY (BACKGROUND PROCESS)
+
+A poller runs every few seconds:
+
+-   Open a transaction.
+-   Claim the next due row using SELECT … FOR UPDATE SKIP LOCKED. This
+    prevents concurrent workers from claiming the same row.
+-   Run the handler registered for that event type.
+-   Mark the row as PUBLISHED.
+-   Commit the transaction.
+
+D. FAILURE AND RETRY
+
+If a handler throws an exception:
+
+-   Roll back the current transaction.
+-   In a new transaction, increment the attempts counter.
+-   Store the error.
+-   Schedule the next attempt using exponential backoff.
+-   After N attempts, mark the row as FAILED for manual investigation.
+
+E. CRASH RECOVERY
+
+The event state is stored in the database, not only in memory.
+
+-   A row that has not been processed remains PENDING.
+-   A transaction that never committed is rolled back by the database.
+-   Its database lock is released.
+-   After the application restarts, the poller can pick up the remaining
+    work.
+
+4. WHAT YOU GET AND WHAT YOU DO NOT GET
+
+GUARANTEED: - The event is recorded if and only if the business
+transaction commits. - The event can be processed later, even after an
+application restart.
+
+NOT GUARANTEED: - Exactly-once execution.
+
+Delivery is AT-LEAST-ONCE. A handler may run more than once.
+
+For example, an email may be sent successfully, but the database
+transaction may fail before the event is marked as published. The event
+can then be retried, and the email may be sent again.
+
+That is why consumers must be IDEMPOTENT.
+
+They can: - Deduplicate using the event ID (for example, with an inbox
+or processed-events table). - Check the current state before acting (for
+example, “Is a driver already assigned?”).
+
+5. EVENTUAL, NOT INSTANT
+
+Side effects happen after the original transaction commits.
+
+Depending on the polling interval and processing time, they may happen
+seconds later rather than inside the original request.
+
+6. OUTBOX IMPLEMENTATION VARIANTS
+
+A. POLLING PUBLISHER This is the approach used in this project. A
+scheduled job periodically reads pending events from the outbox table.
+
+B. TRANSACTION-LOG TAILING / CDC A tool such as Debezium reads changes
+from the database transaction log instead of polling the outbox table.
+
+7. WHERE THE RELAY CAN SEND EVENTS
+
+The relay can: - Publish events to a message broker such as Kafka or
+RabbitMQ, allowing other services to consume them. - Run handlers inside
+the same application, which is suitable for a monolith.
+
+8. OPERATIONAL CHECKLIST
+
+-   Alert when events reach FAILED status.
+-   Clean up old PUBLISHED rows.
+-   Keep handlers idempotent.
+-   Make sure the outbox insert happens inside the business transaction.
+
+In Spring, Propagation.MANDATORY can enforce that the outbox insert is
+called within an existing transaction.
+
+9. ADVANTAGES AND DISADVANTAGES
+
+ADVANTAGES
+
+A. CONSISTENCY The event is recorded if and only if the business
+transaction commits. No distributed transaction (2PC) is needed.
+
+B. RELIABILITY Events are stored durably, so they survive application
+crashes. They can be retried until they succeed or are marked FAILED.
+
+C. DECOUPLING The request does not depend on the email provider or
+message broker being available at that exact moment.
+
+DISADVANTAGES
+
+A. INCREASED COMPLEXITY Requires an extra table, a relay, retries,
+idempotent consumers, monitoring, and additional boilerplate code.
+
+B. PERFORMANCE OVERHEAD Adds one database write per event and polling
+load on the database. It can also add a delay of seconds between the
+commit and the side effect.
+
+C. ADDITIONAL STORAGE The outbox and processed-events tables grow over
+time and need cleanup.
+
+10. NOTES BEHIND THE ADVANTAGES AND DISADVANTAGES
+
+-   microservices.io lists the benefits as avoiding 2PC and ensuring
+    messages are sent if and only if the database transaction commits.
+
+-   SoftwareMill notes that implementing the pattern requires
+    boilerplate code and that it fits best when raw performance is not
+    critical.
+
+-   With polling, the polling frequency must be tuned to balance latency
+    against database load. Publishing events in order can also be
+    difficult.
+
+-   Delivery is at-least-once: the relay may publish a message more than
+    once. This is why idempotent consumers are necessary.
+
+11. IDEMPOTENT CONSUMERS
+
+Example: “Consumer X has already handled event Y.”
+
+Because delivery is at-least-once, the same event may reach a handler
+more than once.
+
+To track processed events, create a table:
+
+CREATE TABLE processed_outbox_events ( event_id BIGINT NOT NULL,
+consumer VARCHAR(100) NOT NULL, processed_at TIMESTAMPTZ NOT NULL
+DEFAULT now(), PRIMARY KEY (event_id, consumer) );
+
+IMPORTANT: event_id must use the same data type as outbox_events.id.
+
+12. HOW THE PROCESSED-EVENTS TABLE WORKS
+
+Before running a handler, execute:
+
+INSERT … ON CONFLICT DO NOTHING
+
+Use the pair: (event_id, consumer_name)
+
+Then: - If 1 row is inserted: This is the first time this consumer has
+processed the event, so run the handler.
+
+-   If 0 rows are inserted: This consumer has already processed the
+    event, so skip it.
+
+The composite primary key allows each consumer to track the event
+separately.
+
+For example: - The email handler processes event 42. - The fulfillment
+handler can also process event 42.
+
+Both consumers have separate records because their consumer names
+differ.
+
+13. THE TRANSACTIONAL REQUIREMENT
+
+The processed-event marker must be written in the SAME TRANSACTION as
+the database work performed by the handler.
+
+The deduplication record and the business database changes must commit
+or roll back together.
+
+Otherwise, a crash between the two operations can cause lost or
+duplicated work.
+
+The processed-events table grows by one row per processed event. It can
+be cleaned up by deleting records older than a fixed retention window.
+
+That window should be longer than the maximum possible
+duplicate-delivery period.
+
+14. WHAT IDEMPOTENCY DOES AND DOES NOT PROTECT
+
+IT PROTECTS: - Work performed inside the database transaction, such as
+updating rows or inserting records. - Duplicate deliveries are
+skipped. - If the transaction fails, both the database work and the
+marker roll back.
+
+IT DOES NOT FULLY PROTECT: External side effects, such as sending an
+email.
+
+Example: - The email is sent successfully. - The database commit
+fails. - The processed-event marker is rolled back. - The event is
+retried. - The email may be sent again.
+
+There is no general way to guarantee true exactly-once execution for an
+external system that does not participate in the same transaction.
+
+15. WAYS TO REDUCE DUPLICATE EMAILS
+
+OPTION A: IDEMPOTENCY KEY Use an idempotency key if the email provider
+supports it. Check the provider’s documentation.
+
+OPTION B: COMMIT THE MARKER BEFORE SENDING This changes the risk: the
+email might never be sent (at-most-once delivery). For payment
+confirmations, this is usually worse than the possibility of sending a
+duplicate email.
+
+16. NOTES ABOUT THE CURRENT PROJECT IMPLEMENTATION
+
+-   In the current code, the processed marker, handler, and
+    markPublished operation share one database transaction.
+
+-   Therefore, the processed-events table mainly provides defense in
+    depth. This is an analysis of the current implementation.
+
+-   The actual protection against assigning a driver twice is the
+    alreadyHasDriver check.
+
+-   The OutboxEvent uses a long ID, so BIGINT is the safer matching type
+    for processed_outbox_events.event_id.
+

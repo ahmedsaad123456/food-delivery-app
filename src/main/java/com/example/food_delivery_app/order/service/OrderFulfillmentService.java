@@ -4,9 +4,24 @@ package com.example.food_delivery_app.order.service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.concurrent.CompletableFuture;
+
 @Service
 @Slf4j
 public class OrderFulfillmentService {
+
+    public CompletableFuture<Void> fulfill(int orderId) {
+        return CompletableFuture.runAsync(() -> {
+            try {
+                // Simulate some work with sleep
+                Thread.sleep(2000);
+                log.info("Order {} fulfilled successfully.", orderId);
+            } catch (InterruptedException e) {
+                log.error("Order fulfillment interrupted for order {}", orderId, e);
+                Thread.currentThread().interrupt();
+            }
+        });
+    }
 
 //    private static final int DEFAULT_ETA_MINUTES = 45;
 //    // eta service is a service that estimates the time it will take for the order to be delivered
